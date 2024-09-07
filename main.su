@@ -1,0 +1,3 @@
+./src/m.h:24:20:print	32	static
+./src/m.h:28:20:process	32	static
+./src/main.c:5:1:main	48	static
