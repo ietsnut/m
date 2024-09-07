@@ -1,5 +1,5 @@
 C:/Program Files/MinGW/MinGW/x86_64-w64-mingw32/include/stdio.h:304:5:scanf	80	static
 C:/Program Files/MinGW/MinGW/x86_64-w64-mingw32/include/stdio.h:371:5:printf	80	static
-./src/m.h:24:20:print	64	static
-./src/m.h:28:20:process	64	static
-./src/main.c:5:1:main	80	static
+./m.h:24:20:print	64	static
+./m.h:28:20:process	64	static
+./main.c:5:1:main	80	static

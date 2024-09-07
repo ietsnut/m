@@ -1,5 +1,5 @@
 CFLAGS = -g -fstack-usage -static -Iinclude -Llib -Wall -Wextra -pedantic 
-SRC = ./src/main.c
+SRC = ./main.c
 
 ifeq ($(OS),Windows_NT)
     TARGET = main.exe
