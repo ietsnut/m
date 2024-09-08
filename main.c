@@ -1,24 +1,27 @@
 #include "m.h"
 
-static Entity self;
+static Entity self  = { 0, 1, 1, 1 };
 static Entity other;
 
 program {
 
-    if (read(&self, sizeof(self)) != sizeof(Entity)) {
-        return 0;
-    }
+    #ifdef _WIN32
+        _setmode(_fileno(stdout), _O_BINARY);
+    #elif __APPLE__ || __linux__
+        int flags = fcntl(STDOUT_FILENO, F_GETFL);
+        fcntl(STDOUT_FILENO, F_SETFL, flags | O_BINARY);
+    #endif
 
+    //printf("sizeof(Entity) == %zu \n" , sizeof(Entity));
+
+    in(&self);
     out(self);
 
     loop {
 
-        if (read(&other, sizeof(other)) != sizeof(Entity)) {
-            break;
-        }
-
+        in(&other);
         self.state += other.state;
-
+    
         out(self);
 
     }
