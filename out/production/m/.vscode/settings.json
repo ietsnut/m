@@ -6,6 +6,8 @@
         "unistd.h": "c",
         "windows.h": "c",
         "charconv": "c",
-        "ostream": "c"
+        "ostream": "c",
+        "process.h": "c",
+        "socket.h": "c"
     }
 }
