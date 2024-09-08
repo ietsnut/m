@@ -1,4 +1,4 @@
-./process.h:17:20:start	48	static
-./process.h:26:20:out	48	static
-./process.h:31:20:in	48	static
-./main.c:6:1:main	48	static
+./main.c:6:main	32	static
+./main.c:31:start	0	static
+./main.c:42:in	32	static
+./main.c:37:out	32	static

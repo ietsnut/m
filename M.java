@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -9,27 +10,29 @@ import java.util.concurrent.TimeUnit;
 public class M {
 
     static ArrayList<Entity> entities = new ArrayList<>();
+    static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
 
     public static void main(String[] args) {
 
-        try {
-            for (int i = 0; i < 10; i++) {
-                Entity entity = new Entity(1, 1, 1);
-                ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-                scheduler.scheduleAtFixedRate(entity, 0, 1000L / 1, TimeUnit.MILLISECONDS);
-                entities.add(entity);
-            }
-        } catch (IOException e) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             for (Entity entity : entities) {
                 try {
                     entity.stop();
                 } catch (IOException | InterruptedException ex) {
-                    throw new RuntimeException(ex);
+                    System.err.println("Failed to stop entity: " + ex.getMessage());
                 }
             }
+        }));
+
+        try {
+            for (int i = 0; i < 10; i++) {
+                Entity entity = new Entity(1, 1, 1);
+                scheduler.scheduleAtFixedRate(entity, 0, 1000L / 1, TimeUnit.MILLISECONDS);
+                entities.add(entity);
+            }
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     static class Entity implements Runnable {
@@ -47,7 +50,8 @@ public class M {
             self[1] = scene;
             self[2] = shape;
             self[3] = state;
-            ProcessBuilder builder = new ProcessBuilder("main.exe");
+            ProcessBuilder builder = new ProcessBuilder("./main");
+            builder.directory(new File(System.getProperty("user.dir")));
             builder.redirectErrorStream(true);
             this.process    = builder.start();
             this.out        = process.getOutputStream();
@@ -65,9 +69,7 @@ public class M {
 
         @Override
         public void run() {
-            while () {
 
-            }
             try {
                 out();
                 in();
@@ -79,6 +81,7 @@ public class M {
                 }
                 throw new RuntimeException(e);
             }
+
         }
 
         private void out() throws IOException {
