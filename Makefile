@@ -1,4 +1,4 @@
-CFLAGS = -g -fstack-usage -static -Iinclude -Llib -Wall -Wextra -pedantic 
+CFLAGS = -g -fstack-usage -Wall -Wextra -pedantic 
 SRC = ./main.c
 
 ifeq ($(OS),Windows_NT)
