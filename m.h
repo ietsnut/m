@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef M_H
+#define M_H
+
 #include <stdio.h>
 #include <stdint.h>
 
@@ -42,3 +45,5 @@ static inline void out(Entity entity) {
 static inline void in(Entity* in) {
     until (read(in, sizeof(*in)) == sizeof(Entity) && in->start == 0);
 }
+
+#endif

@@ -1,4 +1,4 @@
-./main.c:6:main	32	static
-./main.c:31:start	0	static
-./main.c:42:in	32	static
-./main.c:37:out	32	static
+./main.c:6:main	48	static
+./main.c:34:start	0	static
+./main.c:45:in	32	static
+./main.c:40:out	32	static
