@@ -1,13 +1,13 @@
 #include "m.h"
 
-static Entity self = { 0, 1, 1, 1 };
+static Entity self = { 0, 1, 1 };
 static Entity other;
 
 program {
 
     start();
 
-    //printf("sizeof(Entity) == %zu \n" , sizeof(Entity));
+    printf("size == %zu \n" , sizeof(Entity));
 
     loop {
 
