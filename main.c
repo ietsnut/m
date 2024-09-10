@@ -1,22 +1,14 @@
 #include "m.h"
 
-static Entity self = { 0, 1, 1 };
-static Entity other;
-
 program {
 
+    Entity entities[];
+
+    entities[0] = {};
+    entities[1] = {};
+    entities[2] = {};
+    entities[3] = {};
+
     start();
-
-    printf("size == %zu \n" , sizeof(Entity));
-
-    loop {
-
-        in(&other);
-        self.state += other.state;
-        out(self);
-
-    }
-
-    return 0;
 
 }

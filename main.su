@@ -1,4 +1,5 @@
-./main.c:6:main	48	static
+./main.c:6:main	64	static
 ./main.c:33:start	0	static
+./main.c:29:print	64	static
 ./main.c:44:in	32	static
 ./main.c:39:out	32	static
