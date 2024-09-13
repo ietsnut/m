@@ -7,17 +7,22 @@
 #define loop        for(;;)
 #define until(cond) while (!(cond))
 
-#include <stdio.h>
 #include <stdint.h>
 
-#ifdef _WIN32
-    #include <windows.h>
-    #define write(ptr, size) fwrite(ptr, size, 1, stdout)
-    #define read(ptr, size)  fread(ptr, 1, size, stdin)
+#ifdef __AVR__
+    #include <avr/io.h>
+    #include <util/delay.h>
 #else
-    #include <unistd.h>
-    #define write(ptr, size) write(STDOUT_FILENO, ptr, size)
-    #define read(ptr, size)  read(STDIN_FILENO, ptr, size)
+    #include <stdio.h>
+    #ifdef _WIN32
+        #include <windows.h>
+        #define write(ptr, size) fwrite(ptr, size, 1, stdout)
+        #define read(ptr, size)  fread(ptr, 1, size, stdin)
+    #else
+        #include <unistd.h>
+        #define write(ptr, size) write(STDOUT_FILENO, ptr, size)
+        #define read(ptr, size)  read(STDIN_FILENO, ptr, size)
+    #endif
 #endif
 
 typedef struct {
@@ -55,6 +60,7 @@ static inline int start(void) {
         //self.state += other.state;
         out(self);
     }
+
     return 0;
 }
 
