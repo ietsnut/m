@@ -8,6 +8,7 @@
 #define until(cond) while (!(cond))
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #ifdef __AVR__
     #include <avr/io.h>
@@ -30,7 +31,7 @@ typedef struct {
     uint8_t state   : 8;
 } Entity;
 
-Entity incoming;
+Entity entites[];
 
 #define EQUALS(a, b)        ((a).id == (b).id)
 #define MIN(a, b)           ((a) + (((b) - (a)) & -((b) < (a))))
@@ -54,7 +55,7 @@ static inline int start(void) {
     //print(self);
     loop {
         in(&incoming);
-        for(size_t i = 0; i < sizeof(entities) / 2; i++) {
+        for(uint8_t i = 0; i < sizeof(entities) / 2; i++) {
             change_to_highest(entities[i]);
         }
         //self.state += other.state;
