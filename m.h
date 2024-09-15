@@ -26,12 +26,12 @@
     #endif
 #endif
 
+#pragma pack(push, 1)
 typedef struct {
     uint8_t id      : 8; 
     uint8_t state   : 8;
 } Entity;
-
-Entity entites[];
+#pragma pack(pop)
 
 #define EQUALS(a, b)        ((a).id == (b).id)
 #define MIN(a, b)           ((a) + (((b) - (a)) & -((b) < (a))))
@@ -45,9 +45,10 @@ Entity entites[];
 #define IS_MULTIPLE(x, n)   (!((x) & ((n) - 1)))
 #define SWAP(a, b)          ((a) ^= (b), (b) ^= (a), (a) ^= (b))
 #define TOGGLE(x)           ((x) ^= 1)
-#define DIFFERENCE(a, b)    ((a) > (b) ? (a) - (b) : (b) - (a))
+#define ABSDIFFERENCE(a, b) ((a) > (b) ? (a) - (b) : (b) - (a))
 
-static inline int start(void) {
+/*
+static inline int start(Entity entites[]) {
     #ifdef _WIN32
         _setmode(_fileno(stdout), _O_BINARY);
     #endif
@@ -64,9 +65,10 @@ static inline int start(void) {
 
     return 0;
 }
+*/
 
 static inline void print(Entity entity) {
-    printf("%d %d %d\n", entity.start, entity.id, entity.state);
+    printf("ID: %d, STATE: %d\n",  entity.id, entity.state); 
 }
 
 static inline void out(Entity entity) {
