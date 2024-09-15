@@ -33,6 +33,10 @@ typedef struct {
 } Entity;
 #pragma pack(pop)
 
+#define COUNT(...) (sizeof((Entity[]){ __VA_ARGS__ }) / sizeof(Entity))
+#define ENTITIES(...) \
+    Entity entities[COUNT(__VA_ARGS__)] = { __VA_ARGS__ }
+
 #define EQUALS(a, b)        ((a).id == (b).id)
 #define MIN(a, b)           ((a) + (((b) - (a)) & -((b) < (a))))
 #define MAX(a, b)           ((a) - (((a) - (b)) & -((a) < (b))))
@@ -48,18 +52,13 @@ typedef struct {
 #define ABSDIFFERENCE(a, b) ((a) > (b) ? (a) - (b) : (b) - (a))
 
 /*
-static inline int start(Entity entites[]) {
+static inline int start(Entity entities[]) {
     #ifdef _WIN32
         _setmode(_fileno(stdout), _O_BINARY);
     #endif
-    //printf("size == %zu \n" , sizeof(Entity));
-    //print(self);
     loop {
         in(&incoming);
-        for(uint8_t i = 0; i < sizeof(entities) / 2; i++) {
-            change_to_highest(entities[i]);
-        }
-        //self.state += other.state;
+        self.state += incoming.state;
         out(self);
     }
 
@@ -69,6 +68,12 @@ static inline int start(Entity entites[]) {
 
 static inline void print(Entity entity) {
     printf("ID: %d, STATE: %d\n",  entity.id, entity.state); 
+}
+
+static inline void prints(Entity entities[]) {
+    for (int i = 0; i < 4; i++) {
+        print(entities[i]);
+    }
 }
 
 static inline void out(Entity entity) {

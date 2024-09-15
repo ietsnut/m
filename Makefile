@@ -9,7 +9,7 @@ else
     CLEAN = rm -f $(TARGET) main $(wildcard massif.out.*) $(SRC:.c=.su)
 endif
 
-all: build run
+all: build run clean
 
 build: $(SRC)
 	gcc $(CFLAGS) -o $(TARGET) $(SRC)
