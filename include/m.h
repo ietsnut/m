@@ -3,7 +3,6 @@
 #ifndef M_H
 #define M_H
 
-#define program     int main(void)
 #define loop        for(;;)
 #define until(cond) while (!(cond))
 
