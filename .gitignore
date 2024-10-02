@@ -1,3 +1,7 @@
+# build system
+
+cosmocc/
+
 # C: https://github.com/github/gitignore/blob/main/C.gitignore
 
 # Prerequisites
@@ -37,6 +41,7 @@
 *.i*86
 *.x86_64
 *.hex
+*.dbg
 
 # Debug files
 *.dSYM/
