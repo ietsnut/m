@@ -1,7 +1,8 @@
 # build system
 
-tool/
+.tool/
 *.zip
+video/
 
 # C: https://github.com/github/gitignore/blob/main/C.gitignore
 
