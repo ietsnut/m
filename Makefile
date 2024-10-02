@@ -1,23 +1,21 @@
-CFLAGS = -g -fstack-usage -Wall -Wextra -pedantic 
-SRC = ./main.c
+SRC = m.c
+TARGET = m.exe
 
 ifeq ($(OS),Windows_NT)
-    TARGET = main.exe
-    CLEAN = del /F /Q $(TARGET) main.exe $(shell dir /b massif.out.*) $(shell dir /b *.su)
+    CLEAN = del /F /Q $(TARGET) $(shell dir /b massif.out.*) $(shell dir /b *.su)
 else
-    TARGET = main
-    CLEAN = rm -f $(TARGET) main $(wildcard massif.out.*) $(SRC:.c=.su)
+    CLEAN = rm -f $(TARGET) $(wildcard massif.out.*) $(SRC:.c=.su)
 endif
 
 all: build run clean
 
 build: $(SRC)
-	gcc $(CFLAGS) -o $(TARGET) $(SRC)
+	/c/Path/cosmocc/bin/cosmocc.exe -o $(TARGET) $(SRC)
 
 run:
 	./$(TARGET)
 
-clean:
+clean:where cos
 	$(CLEAN)
 
 report: build
