@@ -10,7 +10,7 @@ endif
 all: build run clean
 
 build: $(SRC)
-	/c/Path/cosmocc/bin/cosmocc.exe -o $(TARGET) $(SRC)
+	cosmocc -o $(TARGET) $(SRC)
 
 run:
 	./$(TARGET)

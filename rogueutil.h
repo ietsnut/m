@@ -1,5 +1,5 @@
 /**
- * rogueutil.h by Sergei Akhmatdinov refactored by ietsnut for cosmopolitan
+ * rogueutil.h by Sergei Akhmatdinov refactored by ietsnut
  */
 
 #pragma once
@@ -472,39 +472,96 @@ void printXY(int x, int y, const char* msg) {
 
 
 void drawBox(int x, int y, int width, int height) {
-
     if (width < 2 || height < 2) {
         printf("Width and height must be at least 2.\n");
         return;
     }
 
-    // Set cursor to top left corner of the box
-    locate(x, y);
-
     // Draw top border
-    printf("┌");               // Top left corner
+    locate(x, y);
+    printf("┌");
     for (int i = 0; i < width - 2; i++) {
-        printf("─");           // Top horizontal line
+        printf("─");
     }
-    printf("┐\n");              // Top right corner
+    printf("┐");
 
     // Draw side borders
-    for (int i = 0; i < height - 2; i++) {
-        locate(x, y + 1 + i);  // Move cursor to the next row
-        printf("│");           // Left vertical line
+    for (int i = 1; i < height - 1; i++) {
+        locate(x, y + i);
+        printf("│");
         for (int j = 0; j < width - 2; j++) {
-            printf(" ");       // Space inside the box
+            printf(" ");
         }
-        printf("│\n");         // Right vertical line
+        printf("│");
     }
 
     // Draw bottom border
     locate(x, y + height - 1);
-    printf("└");               // Bottom left corner
+    printf("└");
     for (int i = 0; i < width - 2; i++) {
-        printf("─");           // Bottom horizontal line
+        printf("─");
     }
-    printf("┘\n");              // Bottom right corner
+    printf("┘");
+}
+
+void center_box(const char *message) {
+    static int prev_x = -1;
+    static int prev_y = -1;
+    static int prev_width = -1;
+    static int prev_height = -1;
+
+    int term_width = tcols();
+    int term_height = trows();
+
+    int msg_len = strlen(message);
+
+    // Ensure the box is not larger than the terminal
+    int max_box_width = term_width - 4;  // Leave at least a 2-character margin on each side
+    int box_width = msg_len + 8;         // Adding padding
+    if (box_width > max_box_width) {
+        box_width = max_box_width;
+    }
+
+    int box_height = 5; // Top border, empty line, message line, empty line, bottom border
+
+    // Calculate top-left corner of the box
+    int x = (term_width - box_width) / 2 + 1; // +1 because locate() starts from 1
+    int y = (term_height - box_height) / 2 + 1;
+
+    // Erase the previous box if there was one
+    if (prev_x != -1 && prev_y != -1 && prev_width != -1 && prev_height != -1) {
+        // Overwrite the old box area with spaces
+        for (int i = 0; i < prev_height; i++) {
+            locate(prev_x, prev_y + i);
+            for (int j = 0; j < prev_width; j++) {
+                printf(" ");
+            }
+        }
+    }
+
+    // Draw the box
+    drawBox(x, y, box_width, box_height);
+
+    // Print the message centered within the box
+    int msg_x = x + (box_width - msg_len) / 2;
+    int msg_y = y + box_height / 2;
+
+    // Ensure message does not exceed box width
+    char truncated_message[256];
+    if (msg_len > box_width - 4) { // 4 accounts for box borders and padding
+        strncpy(truncated_message, message, box_width - 4);
+        truncated_message[box_width - 4] = '\0';
+    } else {
+        strcpy(truncated_message, message);
+    }
+
+    printXY(msg_x, msg_y, truncated_message);
+
+    // Update previous box position and size
+    prev_x = x;
+    prev_y = y;
+    prev_width = box_width;
+    prev_height = box_height;
 }
 
 #endif /* RUTIL_H */
