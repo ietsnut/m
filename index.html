@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>M</title>
+	<style type="text/css">
+		html, body {
+			color: #fff;
+			background: #000;
+		}
+	</style>
+</head>
+<body>
+	<pre>
+		
+ 001 ─────────────────────╫────► 002                               
+  │                                          event    conditional  
+  └────────────────────────────► 003          ─┼─     relation     
+                                             cond     operation    
+ 002 ───────────────────────────────                               
+                                                                   
+ 003 ───────────────────────────────                               
+                                                                   
+                                                                   
+                                                                   
+ ┌───┐                                  auto pwm, digital if analog
+┌┤001├───────────────────────────────┐  is 0 or 255                
+│└───┘                               █  enter to create new state  
+├─0  _   .  :  O ▲ ┬      ┌─┐        █  tab to create new condition
+│ ├──┴─►─┴─┬┴──┴─┼─┴─:──O─┤~├─► 1    │                             
+│ │        1     ▼        └─┘        │  switch(state) {            
+│ │  1         ┌───O─┐               │    case 0:                  
+│ ├──┼╥╫───────┴─┬───┴──┬─────► 1    │      // code block          
+│ │  3           └──────┘            │      break;                 
+│ │      ┌────┐                      │    case 1:                  
+│ └──┼───┴────┼────┬──────────► 2    │      // code block          
+│             └────┘                 │      break;                 
+├─2 ┌─┐ ┌─┐ ┌─┐ ┌─                   │  }                          
+│ └─┘ └─┘ └─┘ └─┘                    │                             
+│                                    │                             
+│                                    │                             
+├───┬────────────────────────┬───┬───┤                             
+│000│                        │ + │ > │                             
+└───┴────────────────────────┴───┴───┘                             
+                                                                   
+ ┌─┬────────────┐  ┌───┐       ┌───┐                               
+ │?│name        │  │ O └───────┘ O │                               
+ │!│state       │  └─┐  ┌──U──┐  ┌─┘                               
+ │~│analog pin  │   0│O─┤     ├─O│4                                
+ │-│digital pin │   1│O─┤ AVR ├─O│5                                
+ │>│set/write   │   2│O─┤ T85 ├─O│6                                
+ │<│get/read    │   3│O─┤     ├─O│7                                
+ └─┴────────────┘  ┌─┘  └─────┘  └─┐                               
+                   │ O ┌───────┐ O │                               
+                   └───┘       └───┘                               
+
+	</pre>
+</body>
+</html>
