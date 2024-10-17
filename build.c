@@ -8,9 +8,14 @@ int box_y = 1;   // Initial y position of the box
 int box_width = 20;
 int box_height = 5;
 
+int i = 1;
+
 void draw() {
+    i++;
+    char str[100];
+    sprintf(str, "%d", i);
     cls();  // Clear the screen
-    center_box("Test");  // Draw the box at the current coordinates
+    center_box(str);  // Draw the box at the current coordinates
     locate(box_x + 1, box_y + 1);
     fflush(stdout);
 }
@@ -21,6 +26,7 @@ int main(void) {
     int quit = 0;
     while (!quit) {
         if (kbhit()) {
+            draw();
             int key = getkey();
             switch (key) {
                 case KEY_ESCAPE:  // Exit the loop when Escape is pressed
@@ -30,7 +36,6 @@ int main(void) {
                     break;
             }
         }
-        draw();
     }
 
     cls();           // Clear the screen when exiting

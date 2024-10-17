@@ -1,5 +1,7 @@
-SRC = m.c
-TARGET = m.exe
+FILE = edit
+
+SRC = $(FILE).c
+TARGET = $(FILE).exe
 
 ifeq ($(OS),Windows_NT)
     CLEAN = del /F /Q $(TARGET) $(shell dir /b massif.out.*) $(shell dir /b *.su)
@@ -10,12 +12,13 @@ endif
 all: build run clean
 
 build: $(SRC)
-	cosmocc -o $(TARGET) $(SRC)
+	$(CC) -o $(TARGET) $(SRC) -Wall -Wextra -pedantic -std=c99
 
 run:
 	./$(TARGET)
 
-clean:where cos
+
+clean:
 	$(CLEAN)
 
 report: build
