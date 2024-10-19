@@ -25,13 +25,13 @@ const char *vertical      = "│";
 
 void borders() {
 
-    terminal.append_buffer(ANSI_HIDE_CURSOR);
-    terminal.append_buffer(ANSI_CURSOR_HOME);
+    terminal.append(ANSI_HIDE_CURSOR);
+    terminal.append(ANSI_CURSOR_HOME);
 
     int y;
     for (y = 0; y < terminal.rows; y++) {
         if (y == 0) {
-            terminal.append_buffer(top_left);
+            terminal.append(top_left);
             int content_width = terminal.cols - 3;
             int welcomelen = strlen("┤ MEDITOR ├") - 4;
             if (welcomelen > content_width) {
@@ -41,51 +41,49 @@ void borders() {
             int padding_right = content_width - welcomelen - padding_left;
 
             for (int i = 0; i < padding_left; i++) {
-                terminal.append_buffer(horizontal);
+                terminal.append(horizontal);
             }
 
             if (welcomelen > 0) {
-                terminal.append_buffer("┤ MEDITOR ├");
+                terminal.append("┤ MEDITOR ├");
             }
 
             for (int i = 0; i < padding_right; i++) {
-                terminal.append_buffer(horizontal);
+                terminal.append(horizontal);
             }
-            terminal.append_buffer(top_right);
+            terminal.append(top_right);
         } else if (y == terminal.rows - 1) {
-            terminal.append_buffer(bottom_left);
+            terminal.append(bottom_left);
             for (int i = 0; i < terminal.cols - 3; i++) {
-                terminal.append_buffer(horizontal);
+                terminal.append(horizontal);
             }
-            terminal.append_buffer(bottom_right);
+            terminal.append(bottom_right);
         } else {
-            terminal.append_buffer(vertical);
+            terminal.append(vertical);
             for (int i = 0; i < terminal.cols - 3; i++) {
-                terminal.append_buffer(" ");
+                terminal.append(" ");
             }
-            terminal.append_buffer(vertical);
+            terminal.append(vertical);
         }
-        terminal.append_buffer(ANSI_ERASE_TO_EOL);
+        terminal.append(ANSI_ERASE_TO_EOL);
         if (y < terminal.rows - 1) {
-            terminal.append_buffer("\r\n");
+            terminal.append("\r\n");
         }
     }
 
-    terminal.cursor(terminal.y + 2, terminal.x + 2);
+    //terminal.draw("POWERED BY MICROPENIS", (terminal.cols/2)-(strlen("POWERED BY MICROPENIS")/2), terminal.rows/2);
+	terminal.write("POWERED BY MICROPENIS", ANSI_PINK, (terminal.cols/2)-(strlen("POWERED BY MICROPENIS")/2), terminal.rows/2);
 
-    terminal.append_buffer(ANSI_SHOW_CURSOR);
+    terminal.append(ANSI_SHOW_CURSOR);
 
-    terminal.write_buffer();
+    terminal.show();
 
 }
-
 
 void processKey(char c) {
     switch (c) {
         case '\x1b':
-            WRITE_ANSI(ANSI_CLEAR_SCREEN);
-            WRITE_ANSI(ANSI_CURSOR_HOME);
-            exit(0);
+        	terminal.stop();
             break;
         case 'a':
             if (terminal.x > 0) {
@@ -108,62 +106,22 @@ void processKey(char c) {
             }
             break;
     }
+    borders();
 }
 
-volatile sig_atomic_t resize = 0;
-
-static void sigwinchHandler(int sig) {
-    resize = 1;
-}
-
-static void listen(void) {
-    struct sigaction sa;
-    sa.sa_handler = sigwinchHandler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGWINCH, &sa, NULL) == -1) {
-        terminal.die("sigaction");
-    }
+static void handle_resize(void) {
+    borders();
 }
 
 int main(void) {
-
     terminal.start();
-    listen();
+    terminal.title("[ MEDITOR ]");
+    terminal.listen(EVENT_RESIZE, handle_resize);
+    terminal.listen(EVENT_INPUT, processKey);
     borders();
-
-    fd_set readfds;
-    struct timeval tv;
-
     while (1) {
-        FD_ZERO(&readfds);
-        FD_SET(STDIN_FILENO, &readfds);
+        terminal.input();
 
-        tv.tv_sec = 0;
-        tv.tv_usec = 100000; // 100ms timeout
-
-        int ret = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &tv);
-
-        if (ret == -1 && errno != EINTR) {
-            terminal.die("select");
-        }
-
-        if (resize) {
-            terminal.resize();
-            if (terminal.y >= terminal.rows) terminal.y = terminal.rows - 1;
-            if (terminal.x >= terminal.cols) terminal.x = terminal.cols - 1;
-            resize = 0;
-            borders();
-        }
-
-        if (ret > 0 && FD_ISSET(STDIN_FILENO, &readfds)) {
-            char c = terminal.input();
-            if (c != 0) {
-                processKey(c);
-                borders();
-            }
-        }
     }
-
     return 0;
 }
