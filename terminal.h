@@ -327,11 +327,11 @@ static void terminal_cleanup(void) {
 }
 
 static void terminal_stop(void) {
+    WRITE_ANSI(ANSI_ALT_SCREEN_OFF);
+    WRITE_ANSI(ANSI_CLEAR_SCROLLBACK);
     WRITE_ANSI(ANSI_CLEAR_SCREEN);
     WRITE_ANSI(ANSI_CURSOR_HOME);
     terminal.free_buffer();
-    WRITE_ANSI(ANSI_ALT_SCREEN_OFF);
-    WRITE_ANSI(ANSI_CLEAR_SCROLLBACK);
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &terminal.state) == -1) {
         terminal.die("tcsetattr");
     }
