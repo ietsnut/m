@@ -56,20 +56,28 @@
 #define ANSI_SCROLL_UP                "\x1b[%dS"
 #define ANSI_SCROLL_DOWN              "\x1b[%dT"
 
-#define ANSI_ARROW_UP                 'A'
-#define ANSI_ARROW_DOWN               'B'
-#define ANSI_ARROW_RIGHT              'C'
-#define ANSI_ARROW_LEFT               'D'
+#define ANSI_PINK                     "\x1b[95m"
 
-#define ANSI_PINK                      "\x1b[95m"
+#define ARROW_UP                      '\x41'
+#define ARROW_DOWN                    '\x42'
+#define ARROW_RIGHT                   '\x43'
+#define ARROW_LEFT                    '\x44'
+#define DELETE_KEY                    '\x7E'
 
 #define WRITE_ANSI(code) write(STDOUT_FILENO, code, strlen(code))
+
+const char *top_left      = "╭";
+const char *top_right     = "╮";
+const char *bottom_left   = "╰";
+const char *bottom_right  = "╯";
+const char *horizontal    = "─";
+const char *vertical      = "│";
 
 typedef struct terminal_t terminal_t;
 
 typedef enum {
-    EVENT_RESIZE,
-    EVENT_INPUT,
+    RESIZE,
+    INPUT,
     EVENT_COUNT 
 } terminal_event_t;
 
@@ -84,8 +92,8 @@ struct terminal_t {
     void (*append)          (const char *data);
     void (*show)            (void);
     void (*free_buffer)     (void);
-    void (*start)           (void);
-    void (*stop)            (void);
+    void (*open)            (void);
+    void (*close)           (void);
     void (*die)             (const char *s);
     void (*title)           (const char *t);
     char (*input)           (void);
@@ -93,6 +101,8 @@ struct terminal_t {
     void (*draw)            (const char *str, int x, int y);
     void (*listen)          (terminal_event_t event, void *handler);
     void (*write)           (const char *str, const char *format_start, int x, int y);
+    void (*box)             (int x, int y, int width, int height);
+    void (*reset)           (void);
 
 };
 
@@ -101,8 +111,8 @@ struct terminal_t {
 static void terminal_append(const char *data);
 static void terminal_show(void);
 static void terminal_free_buffer(void);
-static void terminal_start(void);
-static void terminal_stop(void);
+static void terminal_open(void);
+static void terminal_close(void);
 static void terminal_die(const char *s);
 static void terminal_title(const char *t);
 static int  terminal_resize(void);
@@ -111,6 +121,8 @@ static void terminal_cursor(int x, int y);
 static void terminal_draw(const char *str, int x, int y);
 static void terminal_listen(terminal_event_t event, void *handler);
 static void terminal_write(const char *str, const char *format_start, int x, int y);
+static void terminal_box(int x, int y, int width, int height);
+static void terminal_reset(void);
 
 static void (*event_handlers[EVENT_COUNT])(void) = {NULL};
 static void (*input_handler)(char) = NULL;
@@ -125,33 +137,57 @@ static terminal_t terminal = {
     .append = terminal_append,
     .show = terminal_show,
     .free_buffer = terminal_free_buffer,
-    .start = terminal_start,
-    .stop = terminal_stop,
+    .open = terminal_open,
+    .close = terminal_close,
     .die = terminal_die,
     .title = terminal_title,
     .input = terminal_input,
     .cursor = terminal_cursor,
     .draw = terminal_draw,
     .listen = terminal_listen,
-    .write = terminal_write
+    .write = terminal_write,
+    .box = terminal_box,
+    .reset = terminal_reset
 };
 
 // IMPLEMENTATIONS
 
+static void terminal_box(int x, int y, int width, int height) {
+    // Draw top border
+    terminal_draw(top_left, x, y);
+    for (int i = 1; i < width - 1; i++) {
+        terminal_draw(horizontal, x + i, y);
+    }
+    terminal_draw(top_right, x + width - 1, y);
+
+    // Draw side borders
+    for (int i = 1; i < height - 1; i++) {
+        terminal_draw(vertical, x, y + i);
+        terminal_draw(vertical, x + width - 1, y + i);
+    }
+
+    // Draw bottom border
+    terminal_draw(bottom_left, x, y + height - 1);
+    for (int i = 1; i < width - 1; i++) {
+        terminal_draw(horizontal, x + i, y + height - 1);
+    }
+    terminal_draw(bottom_right, x + width - 1, y + height - 1);
+}
+
 static void signal_handler(int sig) {
-    if (sig == SIGWINCH && event_handlers[EVENT_RESIZE]) {
+    if (sig == SIGWINCH && event_handlers[RESIZE]) {
         terminal_resize();
         if (terminal.y >= terminal.rows) terminal.y = terminal.rows - 1;
         if (terminal.x >= terminal.cols) terminal.x = terminal.cols - 1;
-        event_handlers[EVENT_RESIZE]();
+        event_handlers[RESIZE]();
     }
 }
 
 static void terminal_listen(terminal_event_t event, void *handler) {
     if (event < EVENT_COUNT) {
         switch (event) {
-            case EVENT_RESIZE:
-                event_handlers[EVENT_RESIZE] = (void (*)(void))handler;
+            case RESIZE:
+                event_handlers[RESIZE] = (void (*)(void))handler;
                 struct sigaction sa;
                 sa.sa_handler = signal_handler;
                 sigemptyset(&sa.sa_mask);
@@ -160,7 +196,7 @@ static void terminal_listen(terminal_event_t event, void *handler) {
                     terminal.die("sigaction for SIGWINCH");
                 }
                 break;
-            case EVENT_INPUT:
+            case INPUT:
                 input_handler = (void (*)(char))handler;
                 break;
             default:
@@ -211,10 +247,13 @@ static char terminal_input(void) {
 
             if (seq[0] == '[') {
                 switch (seq[1]) {
-                    case ANSI_ARROW_UP:    c = 'w'; break;
-                    case ANSI_ARROW_DOWN:  c = 's'; break;
-                    case ANSI_ARROW_RIGHT: c = 'd'; break;
-                    case ANSI_ARROW_LEFT:  c = 'a'; break;
+                    case 'A': c = ARROW_UP; break;
+                    case 'B': c = ARROW_DOWN; break;
+                    case 'C': c = ARROW_RIGHT; break;
+                    case 'D': c = ARROW_LEFT; break;
+                    case '3': 
+                        if (read(STDIN_FILENO, &seq[2], 1) == 1 && seq[2] == '~')
+                            c = DELETE_KEY; break;
                     default: 
                         if (input_handler) {
                             input_handler('\x1b');
@@ -296,7 +335,13 @@ static void terminal_append(const char *data) {
     terminal.buffer_length += length;
 }
 
+static void terminal_reset() {
+    terminal.append(ANSI_HIDE_CURSOR);
+    terminal.append(ANSI_CURSOR_HOME);
+}
+
 static void terminal_show() {
+    terminal.append(ANSI_SHOW_CURSOR);
     terminal.cursor(terminal.x + 1, terminal.y + 1);
     write(STDOUT_FILENO, terminal.buffer, terminal.buffer_length);
     terminal.buffer_length = 0;
@@ -311,7 +356,7 @@ static void terminal_free_buffer(void) {
 static void terminal_die(const char *s) {
     terminal.free_buffer();
     WRITE_ANSI(ANSI_ALT_SCREEN_OFF);
-    WRITE_ANSI(ANSI_CLEAR_SCREEN);
+    //WRITE_ANSI(ANSI_CLEAR_SCREEN);
     WRITE_ANSI(ANSI_CURSOR_HOME);
     perror(s);
     exit(1);
@@ -326,10 +371,10 @@ static void terminal_cleanup(void) {
     }
 }
 
-static void terminal_stop(void) {
+static void terminal_close(void) {
     WRITE_ANSI(ANSI_ALT_SCREEN_OFF);
     WRITE_ANSI(ANSI_CLEAR_SCROLLBACK);
-    WRITE_ANSI(ANSI_CLEAR_SCREEN);
+    //WRITE_ANSI(ANSI_CLEAR_SCREEN);
     WRITE_ANSI(ANSI_CURSOR_HOME);
     terminal.free_buffer();
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &terminal.state) == -1) {
@@ -338,7 +383,7 @@ static void terminal_stop(void) {
     exit(0);
 }
 
-static void terminal_start(void) {
+static void terminal_open(void) {
     if (tcgetattr(STDIN_FILENO, &terminal.state) == -1) {
         terminal.die("tcgetattr");
     }
