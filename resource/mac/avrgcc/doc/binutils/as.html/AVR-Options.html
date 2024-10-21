@@ -1,12 +1,12 @@
 <html lang="en">
 <head>
-<title>Compiler Options - Using as</title>
+<title>AVR Options - Using as</title>
 <meta http-equiv="Content-Type" content="text/html">
 <meta name="description" content="Using as">
 <meta name="generator" content="makeinfo 4.8">
 <link title="Top" rel="start" href="index.html#Top">
-<link rel="up" href="AVR_002dDependent.html#AVR_002dDependent" title="Compiler-Dependent">
-<link rel="next" href="AVR-Syntax.html#AVR-Syntax" title="Compiler Syntax">
+<link rel="up" href="AVR_002dDependent.html#AVR_002dDependent" title="AVR-Dependent">
+<link rel="next" href="AVR-Syntax.html#AVR-Syntax" title="AVR Syntax">
 <link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
 <!--
 This file documents the GNU Assembler "as".
@@ -38,8 +38,8 @@ section entitled ``GNU Free Documentation License''.
 <div class="node">
 <p>
 <a name="AVR-Options"></a>
-Next:&nbsp;<a rel="next" accesskey="n" href="AVR-Syntax.html#AVR-Syntax">Compiler Syntax</a>,
-Up:&nbsp;<a rel="up" accesskey="u" href="AVR_002dDependent.html#AVR_002dDependent">Compiler-Dependent</a>
+Next:&nbsp;<a rel="next" accesskey="n" href="AVR-Syntax.html#AVR-Syntax">AVR Syntax</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="AVR_002dDependent.html#AVR_002dDependent">AVR-Dependent</a>
 <hr>
 </div>
 
@@ -48,41 +48,41 @@ Up:&nbsp;<a rel="up" accesskey="u" href="AVR_002dDependent.html#AVR_002dDependen
 <p><a name="index-AVR-options-_0028none_0029-783"></a><a name="index-options-for-AVR-_0028none_0029-784"></a>
      
 <a name="index-g_t_0040code_007b_002dmmcu_003d_007d-command-line-option_002c-AVR-785"></a>
-<dl><dt><code>-mmcu=</code><var>mcu</var><dd>Specify ATMEL Compiler instruction set or MCU type.
+<dl><dt><code>-mmcu=</code><var>mcu</var><dd>Specify ATMEL AVR instruction set or MCU type.
 
-     <p>Instruction set avr1 is for the minimal Compiler core, not supported by the C
+     <p>Instruction set avr1 is for the minimal AVR core, not supported by the C
 compiler, only for assembler programs (MCU types: at90s1200,
 attiny11, attiny12, attiny15, attiny28).
 
-     <p>Instruction set avr2 (default) is for the classic Compiler core with up to
+     <p>Instruction set avr2 (default) is for the classic AVR core with up to
 8K program memory space (MCU types: at90s2313, at90s2323, at90s2333, at90s2343,
 attiny22, attiny26, at90s4414, at90s4433, at90s4434, at90s8515, at90c8534,
 at90s8535).
 
-     <p>Instruction set avr25 is for the classic Compiler core with up to 8K program memory
+     <p>Instruction set avr25 is for the classic AVR core with up to 8K program memory
 space plus the MOVW instruction (MCU types: attiny13, attiny13a, attiny2313,
 attiny2313a, attiny24, attiny24a, attiny4313, attiny44, attiny44a, attiny84,
 attiny84a, attiny25, attiny45, attiny85, attiny261, attiny261a, attiny461,
 attiny461a, attiny861, attiny861a, attiny87, attiny43u, attiny48, attiny88,
 attiny828, at86rf401, ata5272).
 
-     <p>Instruction set avr3 is for the classic Compiler core with up to 128K program
+     <p>Instruction set avr3 is for the classic AVR core with up to 128K program
 memory space (MCU types: at43usb355, at76c711).
 
-     <p>Instruction set avr31 is for the classic Compiler core with exactly 128K program
+     <p>Instruction set avr31 is for the classic AVR core with exactly 128K program
 memory space (MCU types: atmega103, at43usb320).
 
-     <p>Instruction set avr35 is for classic Compiler core plus MOVW, CALL, and JMP
+     <p>Instruction set avr35 is for classic AVR core plus MOVW, CALL, and JMP
 instructions (MCU types: attiny167, attiny1634, at90usb82, at90usb162,
 atmega8u2, atmega16u2, atmega32u2, ata5505).
 
-     <p>Instruction set avr4 is for the enhanced Compiler core with up to 8K program
+     <p>Instruction set avr4 is for the enhanced AVR core with up to 8K program
 memory space (MCU types: atmega48, atmega48a, atmega48pa, atmega48p, atmega8,
 atmega8a, atmega88, atmega88a, atmega88p, atmega88pa, atmega8515, atmega8535,
 atmega8hva, at90pwm1, at90pwm2, at90pwm2b, at90pwm3, at90pwm3b, at90pwm81,
 ata6285, ata6286, ata6289).
 
-     <p>Instruction set avr5 is for the enhanced Compiler core with up to 128K program
+     <p>Instruction set avr5 is for the enhanced AVR core with up to 128K program
 memory space (MCU types: at90pwm161, atmega16, atmega16a, atmega161, atmega162,
 atmega163, atmega164a, atmega164p, atmega164pa, atmega165, atmega165a,
 atmega165p, atmega165pa, atmega168, atmega168a, atmega168p, atmega168pa,
@@ -101,34 +101,34 @@ at90pwm216, at90pwm316, atmega32c1, atmega64c1, atmega16m1, atmega32m1,
 atmega64m1, atmega16u4, atmega32u4, atmega32u6, at90usb646, at90usb647, at94k,
 at90scr100, ata5790, ata5795).
 
-     <p>Instruction set avr51 is for the enhanced Compiler core with exactly 128K
+     <p>Instruction set avr51 is for the enhanced AVR core with exactly 128K
 program memory space (MCU types: atmega128, atmega128a, atmega1280,
 atmega1281, atmega1284, atmega1284p, atmega128rfa1, atmega128rfr2,
 atmega1284rfr2, at90can128, at90usb1286, at90usb1287, m3000).
 
-     <p>Instruction set avr6 is for the enhanced Compiler core with a 3-byte PC
+     <p>Instruction set avr6 is for the enhanced AVR core with a 3-byte PC
 (MCU types: atmega2560, atmega2561, atmega256rfr2, atmega2564rfr2).
 
-     <p>Instruction set avrxmega2 is for the XMEGA Compiler core with 8K to 64K
+     <p>Instruction set avrxmega2 is for the XMEGA AVR core with 8K to 64K
 program memory space and less than 64K data space (MCU types:
 atxmega16a4, atxmega16a4u, atxmega16c4, atxmega16d4, atxmega16x1,
 atxmega32a4, atxmega32a4u, atxmega32c4, atxmega32d4, atxmega16e5,
 atxmega8e5, atxmega32e5, atxmega32x1).
 
-     <p>Instruction set avrxmega3 is for the XMEGA Compiler core with 8K to 64K
+     <p>Instruction set avrxmega3 is for the XMEGA AVR core with 8K to 64K
 program memory space and greater than 64K data space (MCU types:
 none).
 
-     <p>Instruction set avrxmega4 is for the XMEGA Compiler core with up to 64K
+     <p>Instruction set avrxmega4 is for the XMEGA AVR core with up to 64K
 program memory space and less than 64K data space (MCU types:
 atxmega64a3, atxmega64a3u, atxmega64a4u, atxmega64b1, atxmega64b3,
 atxmega64c3, atxmega64d3, atxmega64d4).
 
-     <p>Instruction set avrxmega5 is for the XMEGA Compiler core with up to 64K
+     <p>Instruction set avrxmega5 is for the XMEGA AVR core with up to 64K
 program memory space and greater than 64K data space (MCU types:
 atxmega64a1, atxmega64a1u).
 
-     <p>Instruction set avrxmega6 is for the XMEGA Compiler core with larger than
+     <p>Instruction set avrxmega6 is for the XMEGA AVR core with larger than
 64K program memory space and less than 64K data space (MCU types:
 atxmega128a3, atxmega128a3u, atxmega128c3, atxmega128d3, atxmega128d4,
 atxmega192a3, atxmega192a3u, atxmega128b1, atxmega128b3, atxmega192c3,
@@ -136,14 +136,14 @@ atxmega192d3, atxmega256a3, atxmega256a3u, atxmega256a3b,
 atxmega256a3bu, atxmega256c3, atxmega256d3, atxmega384c3,
 atxmega256d3).
 
-     <p>Instruction set avrxmega7 is for the XMEGA Compiler core with larger than
+     <p>Instruction set avrxmega7 is for the XMEGA AVR core with larger than
 64K program memory space and greater than 64K data space (MCU types:
 atxmega128a1, atxmega128a1u, atxmega128a4u).
 
      <p>Instruction set avrtiny is for the ATtiny4/5/9/10/20/40
 microcontrollers.
 
-     <p><a name="index-g_t_0040code_007b_002dmall_002dopcodes_007d-command-line-option_002c-AVR-786"></a><br><dt><code>-mall-opcodes</code><dd>Accept all Compiler opcodes, even if not supported by <code>-mmcu</code>.
+     <p><a name="index-g_t_0040code_007b_002dmall_002dopcodes_007d-command-line-option_002c-AVR-786"></a><br><dt><code>-mall-opcodes</code><dd>Accept all AVR opcodes, even if not supported by <code>-mmcu</code>.
 
      <p><a name="index-g_t_0040code_007b_002dmno_002dskip_002dbug_007d-command-line-option_002c-AVR-787"></a><br><dt><code>-mno-skip-bug</code><dd>This option disable warnings for skipping two-word instructions.
 

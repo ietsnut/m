@@ -1,6 +1,6 @@
 # Hey Emacs, this is a -*- makefile -*-
 
-# Compiler-GCC Makefile template, derived from the WinAVR template (which
+# AVR-GCC Makefile template, derived from the WinAVR template (which
 # is public domain), believed to be neutral to any flavor of "make"
 # (GNU make, BSD make, SysV make)
 
@@ -143,7 +143,7 @@ program: $(TARGET).hex $(TARGET).eep
 
 
 
-# Convert ELF to COFF for use in debugging / simulating in Compiler Studio or VMLAB.
+# Convert ELF to COFF for use in debugging / simulating in AVR Studio or VMLAB.
 COFFCONVERT=$(OBJCOPY) --debugging \
 --change-section-address .data-0x800000 \
 --change-section-address .bss-0x800000 \

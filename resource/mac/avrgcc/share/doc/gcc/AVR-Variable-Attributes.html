@@ -1,6 +1,6 @@
 <html lang="en">
 <head>
-<title>Compiler Variable Attributes - Using the GNU Compiler Collection (GCC)</title>
+<title>AVR Variable Attributes - Using the GNU Compiler Collection (GCC)</title>
 <meta http-equiv="Content-Type" content="text/html">
 <meta name="description" content="Using the GNU Compiler Collection (GCC)">
 <meta name="generator" content="makeinfo 4.8">
@@ -52,10 +52,10 @@ Up:&nbsp;<a rel="up" accesskey="u" href="Variable-Attributes.html#Variable-Attri
 <hr>
 </div>
 
-<h4 class="subsection">6.32.2 Compiler Variable Attributes</h4>
+<h4 class="subsection">6.32.2 AVR Variable Attributes</h4>
 
      <dl>
-<dt><code>progmem</code><dd><a name="index-g_t_0040code_007bprogmem_007d-variable-attribute_002c-AVR-3584"></a>The <code>progmem</code> attribute is used on the Compiler to place read-only
+<dt><code>progmem</code><dd><a name="index-g_t_0040code_007bprogmem_007d-variable-attribute_002c-AVR-3584"></a>The <code>progmem</code> attribute is used on the AVR to place read-only
 data in the non-volatile program memory (flash). The <code>progmem</code>
 attribute accomplishes this by putting respective variables into a
 section whose name starts with <code>.progmem</code>.
@@ -64,11 +64,11 @@ section whose name starts with <code>.progmem</code>.
 but adds additional checking.
 
           <dl>
-<dt>&bull;&nbsp;<!-- /@w --> Ordinary Compiler cores with 32 general purpose registers:<dd><code>progmem</code> affects the location
+<dt>&bull;&nbsp;<!-- /@w --> Ordinary AVR cores with 32 general purpose registers:<dd><code>progmem</code> affects the location
 of the data but not how this data is accessed. 
 In order to read data located with the <code>progmem</code> attribute
 (inline) assembler must be used.
-          <pre class="smallexample">               /* Use custom macros from <a href="http://nongnu.org/avr-libc/user-manual/">Compiler-LibC</a><!-- /@w --> */
+          <pre class="smallexample">               /* Use custom macros from <a href="http://nongnu.org/avr-libc/user-manual/">AVR-LibC</a><!-- /@w --> */
                #include &lt;avr/pgmspace.h&gt;
                
                /* Locate var in flash memory */
@@ -80,13 +80,13 @@ In order to read data located with the <code>progmem</code> attribute
                    return (int) pgm_read_word (&amp; var[i]);
                }
           </pre>
-          <p>Compiler is a Harvard architecture processor and data and read-only data
+          <p>AVR is a Harvard architecture processor and data and read-only data
 normally resides in the data memory (RAM).
 
-          <p>See also the <a href="AVR-Named-Address-Spaces.html#AVR-Named-Address-Spaces">Compiler Named Address Spaces</a> section for
+          <p>See also the <a href="AVR-Named-Address-Spaces.html#AVR-Named-Address-Spaces">AVR Named Address Spaces</a> section for
 an alternate way to locate and access data in flash memory.
 
-          <br><dt>&bull;&nbsp;<!-- /@w --> Compiler cores with flash memory visible in the RAM address range:<dd>On such devices, there is no need for attribute <code>progmem</code> or
+          <br><dt>&bull;&nbsp;<!-- /@w --> AVR cores with flash memory visible in the RAM address range:<dd>On such devices, there is no need for attribute <code>progmem</code> or
 <a href="AVR-Named-Address-Spaces.html#AVR-Named-Address-Spaces"><code>__flash</code></a> qualifier at all. 
 Just use standard C / C++.  The compiler will generate <code>LD*</code>
 instructions.  As flash memory is visible in the RAM address range,
@@ -95,10 +95,10 @@ RAM, no special features are needed in order not to waste RAM for
 read-only data or to read from flash.  You might even get slightly better
 performance by
 avoiding <code>progmem</code> and <code>__flash</code>.  This applies to devices from
-families <code>avrtiny</code> and <code>avrxmega3</code>, see <a href="AVR-Options.html#AVR-Options">Compiler Options</a> for
+families <code>avrtiny</code> and <code>avrxmega3</code>, see <a href="AVR-Options.html#AVR-Options">AVR Options</a> for
 an overview.
 
-          <br><dt>&bull;&nbsp;<!-- /@w -->Reduced Compiler Tiny cores like ATtiny40:<dd>The compiler adds <code>0x4000</code>
+          <br><dt>&bull;&nbsp;<!-- /@w -->Reduced AVR Tiny cores like ATtiny40:<dd>The compiler adds <code>0x4000</code>
 to the addresses of objects and declarations in <code>progmem</code> and locates
 the objects in flash memory, namely in section <code>.progmem.data</code>. 
 The offset is needed because the flash memory is visible in the RAM
@@ -172,7 +172,7 @@ be accessed by the <code>LDS</code> and <code>STS</code> instructions which take
 absolute addresses.
 
           <ul>
-<li>This attribute is only supported for the reduced Compiler Tiny core
+<li>This attribute is only supported for the reduced AVR Tiny core
 like ATtiny40.
 
           <li>You must make sure that respective data is located in the

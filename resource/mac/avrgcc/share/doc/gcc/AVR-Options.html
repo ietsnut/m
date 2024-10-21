@@ -1,6 +1,6 @@
 <html lang="en">
 <head>
-<title>Compiler Options - Using the GNU Compiler Collection (GCC)</title>
+<title>AVR Options - Using the GNU Compiler Collection (GCC)</title>
 <meta http-equiv="Content-Type" content="text/html">
 <meta name="description" content="Using the GNU Compiler Collection (GCC)">
 <meta name="generator" content="makeinfo 4.8">
@@ -52,17 +52,17 @@ Up:&nbsp;<a rel="up" accesskey="u" href="Submodel-Options.html#Submodel-Options"
 <hr>
 </div>
 
-<h4 class="subsection">3.18.5 Compiler Options</h4>
+<h4 class="subsection">3.18.5 AVR Options</h4>
 
 <p><a name="index-AVR-Options-1590"></a>
-These options are defined for Compiler implementations:
+These options are defined for AVR implementations:
 
      <dl>
-<dt><code>-mmcu=</code><var>mcu</var><dd><a name="index-mmcu-1591"></a>Specify Atmel Compiler instruction set architectures (ISA) or MCU type.
+<dt><code>-mmcu=</code><var>mcu</var><dd><a name="index-mmcu-1591"></a>Specify Atmel AVR instruction set architectures (ISA) or MCU type.
 
      <p>The default for this option is&nbsp;<!-- /@w -->`<samp><span class="samp">avr2</span></samp>'.
 
-     <p>GCC supports the following Compiler devices and ISAs:
+     <p>GCC supports the following AVR devices and ISAs:
 
      <!-- Copyright (C) 2012-2017 Free Software Foundation, Inc. -->
 <!-- This is part of the GCC manual. -->
@@ -122,7 +122,7 @@ These options are defined for Compiler implementations:
           <br><dt><code>avrtiny</code><dd>&ldquo;TINY&rdquo; Tiny core devices with 512&nbsp;<!-- /@w -->B up to 4&nbsp;<!-- /@w -->KiB of program memory. 
 <br><var>mcu</var>&nbsp;<!-- /@w -->= <code>attiny10</code>, <code>attiny20</code>, <code>attiny4</code>, <code>attiny40</code>, <code>attiny5</code>, <code>attiny9</code>.
 
-          <br><dt><code>avr1</code><dd>This ISA is implemented by the minimal Compiler core and supported for assembler only.
+          <br><dt><code>avr1</code><dd>This ISA is implemented by the minimal AVR core and supported for assembler only. 
 <br><var>mcu</var>&nbsp;<!-- /@w -->= <code>attiny11</code>, <code>attiny12</code>, <code>attiny15</code>, <code>attiny28</code>, <code>at90s1200</code>.
 
      </dl>
@@ -139,7 +139,7 @@ prologue/epilogue.  Without this option, outgoing arguments are pushed
 before calling a function and popped afterwards.
 
      <p>Popping the arguments after the function call can be expensive on
-Compiler so that accumulating the stack space might lead to smaller
+AVR so that accumulating the stack space might lead to smaller
 executables because arguments need not be removed from the
 stack after such a function call.
 
@@ -222,7 +222,7 @@ performed as
 
      <br><dt><code>-mfract-convert-truncate</code><dd><a name="index-mfract_002dconvert_002dtruncate-1605"></a>Allow to use truncation instead of rounding towards zero for fractional fixed-point types.
 
-     <br><dt><code>-nodevicelib</code><dd><a name="index-nodevicelib-1606"></a>Don't link against Compiler-LibC's device specific library <code>lib&lt;mcu&gt;.a</code>.
+     <br><dt><code>-nodevicelib</code><dd><a name="index-nodevicelib-1606"></a>Don't link against AVR-LibC's device specific library <code>lib&lt;mcu&gt;.a</code>.
 
      <br><dt><code>-Waddr-space-convert</code><dd><a name="index-Waddr_002dspace_002dconvert-1607"></a>Warn about conversions between address spaces in the case where the
 resulting address space is not contained in the incoming address space.
@@ -276,15 +276,15 @@ name start with <code>.trampolines</code> into the segment where <code>EIND</cod
 points to.
 
      <li>The startup code from libgcc never sets <code>EIND</code>. 
-Notice that startup code is a blend of code from libgcc and Compiler-LibC.
-For the impact of Compiler-LibC on <code>EIND</code>, see the
-<a href="http://nongnu.org/avr-libc/user-manual/">Compiler-LibC&nbsp;user&nbsp;manual</a><!-- /@w -->.
+Notice that startup code is a blend of code from libgcc and AVR-LibC. 
+For the impact of AVR-LibC on <code>EIND</code>, see the
+<a href="http://nongnu.org/avr-libc/user-manual/">AVR-LibC&nbsp;user&nbsp;manual</a><!-- /@w -->.
 
      <li>It is legitimate for user-specific startup code to set up <code>EIND</code>
 early, for example by means of initialization code located in
 section <code>.init3</code>. Such code runs prior to general startup code
 that initializes RAM and calls constructors, but after the bit
-of startup code from Compiler-LibC that sets <code>EIND</code> to the segment
+of startup code from AVR-LibC that sets <code>EIND</code> to the segment
 where the vector table is located.
      <pre class="example">          #include &lt;avr/io.h&gt;
           
@@ -348,7 +348,7 @@ Alternatively, <code>func_4</code> can be defined in the linker script.
 
 <h5 class="subsubsection">3.18.5.2 Handling of the <code>RAMPD</code>, <code>RAMPX</code>, <code>RAMPY</code> and <code>RAMPZ</code> Special Function Registers</h5>
 
-<p><a name="index-g_t_0040code_007bRAMPD_007d-1610"></a><a name="index-g_t_0040code_007bRAMPX_007d-1611"></a><a name="index-g_t_0040code_007bRAMPY_007d-1612"></a><a name="index-g_t_0040code_007bRAMPZ_007d-1613"></a>Some Compiler devices support memories larger than the 64&nbsp;<!-- /@w -->KiB range
+<p><a name="index-g_t_0040code_007bRAMPD_007d-1610"></a><a name="index-g_t_0040code_007bRAMPX_007d-1611"></a><a name="index-g_t_0040code_007bRAMPY_007d-1612"></a><a name="index-g_t_0040code_007bRAMPZ_007d-1613"></a>Some AVR devices support memories larger than the 64&nbsp;<!-- /@w -->KiB range
 that can be accessed with 16-bit pointers.  To access memory locations
 outside this 64&nbsp;<!-- /@w -->KiB range, the content of a <code>RAMP</code>
 register is used as high part of the address:
@@ -373,22 +373,22 @@ is reset to zero after the operation.
 prologue/epilogue saves/restores that SFR and initializes it with
 zero in case the ISR code might (implicitly) use it.
 
-     <li>RAM larger than 64&nbsp;<!-- /@w -->KiB is not supported by GCC for Compiler targets.
+     <li>RAM larger than 64&nbsp;<!-- /@w -->KiB is not supported by GCC for AVR targets. 
 If you use inline assembler to read from locations outside the
 16-bit address range and change one of the <code>RAMP</code> registers,
 you must reset it to zero after the access.
 
  </ul>
 
-<h5 class="subsubsection">3.18.5.3 Compiler Built-in Macros</h5>
+<h5 class="subsubsection">3.18.5.3 AVR Built-in Macros</h5>
 
 <p>GCC defines several built-in macros so that the user code can test
 for the presence or absence of features.  Almost any of the following
 built-in macros are deduced from device capabilities and thus
 triggered by the <samp><span class="option">-mmcu=</span></samp> command-line option.
 
- <p>For even more Compiler-specific built-in macros see
-<a href="AVR-Named-Address-Spaces.html#AVR-Named-Address-Spaces">Compiler Named Address Spaces</a> and <a href="AVR-Built_002din-Functions.html#AVR-Built_002din-Functions">Compiler Built-in Functions</a>.
+ <p>For even more AVR-specific built-in macros see
+<a href="AVR-Named-Address-Spaces.html#AVR-Named-Address-Spaces">AVR Named Address Spaces</a> and <a href="AVR-Built_002din-Functions.html#AVR-Built_002din-Functions">AVR Built-in Functions</a>.
 
      <dl>
 <dt><code>__AVR_ARCH__</code><dd>Build-in macro that resolves to a decimal number that identifies the
@@ -421,7 +421,7 @@ built-in macro <code>__AVR_ATmega8__</code>, <samp><span class="option">-mmcu=at
 
      <p>The built-in macros' names follow
 the scheme <code>__AVR_</code><var>Device</var><code>__</code> where <var>Device</var> is
-the device name as from the Compiler user manual. The difference between
+the device name as from the AVR user manual. The difference between
 <var>Device</var> in the built-in macro and <var>device</var> in
 <samp><span class="option">-mmcu=</span><var>device</var></samp> is that the latter is always lowercase.
 
@@ -477,7 +477,7 @@ by <samp><span class="option">-msp8</span></samp>.
 
      <br><dt><code>__NO_INTERRUPTS__</code><dd>This macro reflects the <samp><span class="option">-mno-interrupts</span></samp> command-line option.
 
-     <br><dt><code>__AVR_ERRATA_SKIP__</code><dt><code>__AVR_ERRATA_SKIP_JMP_CALL__</code><dd>Some Compiler devices (AT90S8515, ATmega103) must not skip 32-bit
+     <br><dt><code>__AVR_ERRATA_SKIP__</code><dt><code>__AVR_ERRATA_SKIP_JMP_CALL__</code><dd>Some AVR devices (AT90S8515, ATmega103) must not skip 32-bit
 instructions because of a hardware erratum.  Skip instructions are
 <code>SBRS</code>, <code>SBRC</code>, <code>SBIS</code>, <code>SBIC</code> and <code>CPSE</code>. 
 The second macro is only defined if <code>__AVR_HAVE_JMP_CALL__</code> is also
@@ -505,7 +505,7 @@ description file, and is currently available for
 there is no need to use address spaces like <code>__flash</code> or
 features like attribute <code>progmem</code> and <code>pgm_read_*</code>.
 
-     <br><dt><code>__WITH_AVRLIBC__</code><dd>The compiler is configured to be used together with Compiler-Libc.
+     <br><dt><code>__WITH_AVRLIBC__</code><dd>The compiler is configured to be used together with AVR-Libc. 
 See the <samp><span class="option">--with-avrlibc</span></samp> configure option.
 
  </dl>

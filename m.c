@@ -134,14 +134,6 @@ void draw_text() {
     }
 }
 
-void clear() {
-    for (int i = 0; i < terminal.rows; i++) {
-        for (int j = 0; j < terminal.cols; j++) {
-            terminal.draw(" ", j, i);
-        }
-    }
-}
-
 void draw() {
     terminal.box(0, 0, terminal.cols, terminal.rows);
 
@@ -199,7 +191,7 @@ void draw_ascii_image() {
 }
 
 void refresh() {
-    terminal.reset();
+    terminal.start();
     switch(state) {
         case HELPING:
             draw();
@@ -214,12 +206,43 @@ void refresh() {
             break;
     }
     terminal.cursor(terminal.x + 1, terminal.y - scroll_offset + 1);
-    terminal.show();
+    terminal.stop();
 }
 
 void write_headers_to_file(FILE *fp) {
     fprintf(fp, "#define F_CPU 8000000UL\n");
     fprintf(fp, "#include \"blink.h\"\n\n");
+}
+
+void reapply_quarantine() {
+    const char* os_folder = "./resource/mac/";
+    char cmd[512];
+    snprintf(cmd, sizeof(cmd), "xattr -r -w com.apple.quarantine \"0081;00000000;Chrome;|com.google.Chrome\" %s", os_folder);
+    
+    int window_width = 60;
+    int window_height = 8;
+    int start_x = (terminal.cols - window_width) / 2;
+    int start_y = (terminal.rows - window_height) / 2;
+
+    terminal.clear();
+    terminal.box(start_x, start_y, window_width, window_height);
+    terminal.draw("Reapplying Quarantine", start_x + (window_width - 22) / 2, start_y);
+    terminal.draw("Processing...", start_x + (window_width - 13) / 2, start_y + 3);
+    terminal.stop();
+
+    int result = system(cmd);
+
+    terminal.clear();
+    terminal.box(start_x, start_y, window_width, window_height);
+    if (result == 0) {
+        terminal.draw("Quarantine attributes reapplied successfully.", start_x + 2, start_y + 3);
+    } else {
+        terminal.draw("Failed to reapply quarantine attributes.", start_x + 2, start_y + 3);
+    }
+    terminal.draw("Press any key to continue...", start_x + 2, start_y + 5);
+    terminal.cursor(start_x + 28, start_y + 5);
+    terminal.stop();
+    terminal.input();
 }
 
 void compile_and_program() {
@@ -235,14 +258,86 @@ void compile_and_program() {
     }
     fclose(fp);
 
-    // Commands to run
-    const char *commands[] = {
-        "./resource/windows/avrgcc/bin/avr-gcc.exe -g -Os -mmcu=attiny85 -DF_CPU=8000000UL -o blink.elf blink.c",
-        "./resource/windows/avrgcc/bin/avr-objcopy.exe -O ihex blink.elf blink.hex",
-        "./resource/windows/avrdude/avrdude.exe -P usb:04d8:00dd -c stk500v1 -p t85 -b 19200 -U lfuse:w:0xE2:m -U hfuse:w:0xDF:m",
-        "./resource/windows/avrdude/avrdude.exe -P usb:04d8:00dd -c stk500v1 -p t85 -b 19200 -U flash:w:blink.hex:i"
-    };
+    const char* os_folder = NULL;
+    const char* exe_ext = "";
+    bool need_chmod = false;
+    bool is_macos = false;
+    if (IsLinux()) {
+        os_folder = "./resource/linux/";
+        need_chmod = true;
+    } else if (IsWindows()) {
+        os_folder = "./resource/windows/";
+        exe_ext = ".exe";
+    } else if (IsXnu()) {
+        os_folder = "./resource/mac/";
+        need_chmod = false;
+        is_macos = true;
+    }
+    
+    if (is_macos) {
+        //reapply_quarantine();
 
+        int window_width = 60;
+        int window_height = 10;
+        int start_x = (terminal.cols - window_width) / 2;
+        int start_y = (terminal.rows - window_height) / 2;
+
+        terminal.clear();
+        terminal.box(start_x, start_y, window_width, window_height);
+
+        // Draw title
+        const char *title = "magic mac_osx crap";
+        terminal.draw(title, start_x + (window_width - strlen(title)) / 2, start_y);
+
+        // Draw message
+        const char *msg1 = "why the fuck do u use a mac";
+        const char *msg2 = "click to let me hack";
+        const char *msg3 = "ur shitty cutting board";
+        terminal.draw(msg1, start_x + 2, start_y + 2);
+        terminal.draw(msg2, start_x + 2, start_y + 3);
+        terminal.draw(msg3, start_x + 2, start_y + 4);
+
+        // Draw prompt
+        const char *prompt = "Do you want to proceed? (y/n): ";
+        terminal.draw(prompt, start_x + 2, start_y + 6);
+        //terminal.cursor(start_x + 2 + strlen(prompt), start_y + 6);
+        terminal.stop();
+
+
+        char response = terminal.input();
+
+        if (true) {
+            terminal.close();
+/*
+
+                for (int i = 0; i < 3; i++) {
+                    snprintf(cmd, sizeof(cmd), "sudo spctl --add --label \"AVR-GCC Tool\" %s%s", os_folder, executables[i]);
+                    system(cmd);
+                }
+*/
+            char cmd[512];
+            snprintf(cmd, sizeof(cmd), "sudo xattr -r -d com.apple.quarantine %s", os_folder);
+            int result = system(cmd);
+
+            terminal.open();
+            refresh();
+        }
+    }
+
+    if (need_chmod) {
+        char cmd[512];
+        snprintf(cmd, sizeof(cmd), "chmod -R +x %s", os_folder);
+        system(cmd);
+    }
+
+    
+    // Commands to run
+    char commands[4][256];
+    snprintf(commands[0], sizeof(commands[0]), "%savrgcc/bin/avr-gcc%s -g -Os -mmcu=attiny85 -DF_CPU=8000000UL -o blink.elf blink.c", os_folder, exe_ext);
+    snprintf(commands[1], sizeof(commands[1]), "%savrgcc/bin/avr-objcopy%s -O ihex blink.elf blink.hex", os_folder, exe_ext);
+    snprintf(commands[2], sizeof(commands[2]), "%savrdude/avrdude%s -P /dev/cu.usbmodem101 -c stk500v1 -p t85 -b 19200 -U lfuse:w:0xE2:m -U hfuse:w:0xDF:m", os_folder, exe_ext);
+    snprintf(commands[3], sizeof(commands[3]), "%savrdude/avrdude%s -P /dev/cu.usbmodem101 -c stk500v1 -p t85 -b 19200 -U flash:w:blink.hex:i", os_folder, exe_ext);
+    // usb:04d8:00dd
     // Buffer to store command output
     int return_codes[4];
     for (int i = 0; i < 4; i++) {
@@ -258,7 +353,7 @@ void compile_and_program() {
     int start_x = (terminal.cols - window_width) / 2;
     int start_y = (terminal.rows - window_height) / 2;
 
-    clear();
+    terminal.clear();
     terminal.box(start_x, start_y, window_width, window_height);
 
     // Draw title
@@ -268,26 +363,45 @@ void compile_and_program() {
     // Draw return codes
     for (int i = 0; i < 4; i++) {
         char result[40];
-        snprintf(result, sizeof(result), "Command %d return code: %d", i + 1, return_codes[i]);
+        switch (i) {
+            case 0:
+                snprintf(result, sizeof(result), "AVRGCC:  %d", return_codes[i]);
+                break;
+            case 1:
+                snprintf(result, sizeof(result), "OBJCOPY: %d", return_codes[i]);
+                break;
+            case 2:
+                snprintf(result, sizeof(result), "FUSES:   %d", return_codes[i]);
+                break;
+            case 3:
+                snprintf(result, sizeof(result), "FLASH:   %d", return_codes[i]);
+                break;
+        }
+        
+        
         terminal.draw(result, start_x + 2, start_y + 2 + i);
     }
 
     // Wait for user input to close the window
     terminal.draw("Press any key to continue...", start_x + 2, start_y + window_height - 2);
+    refresh();
     terminal.input();
 
     // Redraw the main screen
     refresh();
 }
 
+
+
 void processKey(char c) {
-    clear();
+    terminal.clear();
     char debug_msg[100];
     snprintf(debug_msg, sizeof(debug_msg), "Key pressed: %d", c);
     terminal.draw(debug_msg, 2, terminal.rows - 2);
     switch (c) {
         case '\x1b':
             terminal.close();
+            exit(0);
             break;
         case '?':
             if (state == HELPING) {
@@ -331,7 +445,7 @@ void processKey(char c) {
 }
 
 static void handle_resize(void) {
-    clear();
+    terminal.clear();
     refresh();
 }
 
@@ -345,7 +459,6 @@ int main(int argc, char *argv[]) {
     terminal.open();
     terminal.title("[ MEDITOR ]");
     terminal.listen(RESIZE, handle_resize);
-    terminal.listen(INPUT, processKey);
     
     init_text_buffer();
     
@@ -359,9 +472,12 @@ int main(int argc, char *argv[]) {
     }
     state = DEFAULT;
     refresh();
+
     while (1) {
-        terminal.input();
+        char c = terminal.input();
+        processKey(c);
     }
+
     free_text_buffer();
     return 0;
 }

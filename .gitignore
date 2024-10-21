@@ -1,6 +1,7 @@
 # build system
 
 .tool/
+tool/
 *.zip
 
 # C: https://github.com/github/gitignore/blob/main/C.gitignore

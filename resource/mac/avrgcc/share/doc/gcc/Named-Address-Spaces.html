@@ -59,7 +59,7 @@ As an extension, GNU C supports named address spaces as
 defined in the N1275 draft of ISO/IEC DTR 18037.  Support for named
 address spaces in GCC will evolve as the draft technical report
 changes.  Calling conventions for any target might also change.  At
-present, only the Compiler, SPU, M32C, RL78, and x86 targets support
+present, only the AVR, SPU, M32C, RL78, and x86 targets support
 address spaces other than the generic address space.
 
  <p>Address space identifiers may be used exactly like any other C type
@@ -68,9 +68,9 @@ document for more details.
 
  <p><a name="AVR-Named-Address-Spaces"></a>
 
-<h4 class="subsection">6.16.1 Compiler Named Address Spaces</h4>
+<h4 class="subsection">6.16.1 AVR Named Address Spaces</h4>
 
-<p>On the Compiler target, there are several address spaces that can be used
+<p>On the AVR target, there are several address spaces that can be used
 in order to put read-only data into the flash memory and access that
 data by means of the special instructions <code>LPM</code> or <code>ELPM</code>
 needed to read from flash.
@@ -85,7 +85,7 @@ feature and <code>.rodata</code> stays in flash: The compiler just generates
 <code>LD*</code> instructions, and the linker script adds core specific
 offsets to all <code>.rodata</code> symbols: <code>0x4000</code> in the case of
 <code>avrtiny</code> and <code>0x8000</code> in the case of <code>avrxmega3</code>. 
-See <a href="AVR-Options.html#AVR-Options">Compiler Options</a> for a list of respective devices.
+See <a href="AVR-Options.html#AVR-Options">AVR Options</a> for a list of respective devices.
 
  <p>For devices not in <code>avrtiny</code> or <code>avrxmega3</code>,
 any data including read-only data is located in RAM (the generic
@@ -151,7 +151,7 @@ support is available or not:
          return var;
      }
      #else
-     #include &lt;avr/pgmspace.h&gt; /* From Compiler-LibC */
+     #include &lt;avr/pgmspace.h&gt; /* From AVR-LibC */
      
      const int var PROGMEM = 1;
      
@@ -166,7 +166,7 @@ locates data in flash but
 accesses to these data read from generic address space, i.e. 
 from RAM,
 so that you need special accessors like <code>pgm_read_byte</code>
-from <a href="http://nongnu.org/avr-libc/user-manual/">Compiler-LibC</a><!-- /@w -->
+from <a href="http://nongnu.org/avr-libc/user-manual/">AVR-LibC</a><!-- /@w -->
 together with attribute <code>progmem</code>.
 
 <p class="noindent"><b>Limitations and caveats</b>
@@ -199,7 +199,7 @@ located in static storage with a 24-bit address:
      <li>On the reduced Tiny devices like ATtiny40, no address spaces are supported. 
 Just use vanilla C / C++ code without overhead as outlined above. 
 Attribute <code>progmem</code> is supported but works differently,
-see <a href="AVR-Variable-Attributes.html#AVR-Variable-Attributes">Compiler Variable Attributes</a>.
+see <a href="AVR-Variable-Attributes.html#AVR-Variable-Attributes">AVR Variable Attributes</a>.
 
  </ul>
 

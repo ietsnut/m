@@ -77,7 +77,6 @@ typedef struct terminal_t terminal_t;
 
 typedef enum {
     RESIZE,
-    INPUT,
     EVENT_COUNT 
 } terminal_event_t;
 
@@ -90,7 +89,7 @@ struct terminal_t {
     int buffer_length;
 
     void (*append)          (const char *data);
-    void (*show)            (void);
+    void (*stop)            (void);
     void (*free_buffer)     (void);
     void (*open)            (void);
     void (*close)           (void);
@@ -102,14 +101,15 @@ struct terminal_t {
     void (*listen)          (terminal_event_t event, void *handler);
     void (*write)           (const char *str, const char *format_start, int x, int y);
     void (*box)             (int x, int y, int width, int height);
-    void (*reset)           (void);
+    void (*start)           (void);
+    void (*clear)           (void);
 
 };
 
 // METHODS
 
 static void terminal_append(const char *data);
-static void terminal_show(void);
+static void terminal_stop(void);
 static void terminal_free_buffer(void);
 static void terminal_open(void);
 static void terminal_close(void);
@@ -122,10 +122,10 @@ static void terminal_draw(const char *str, int x, int y);
 static void terminal_listen(terminal_event_t event, void *handler);
 static void terminal_write(const char *str, const char *format_start, int x, int y);
 static void terminal_box(int x, int y, int width, int height);
-static void terminal_reset(void);
+static void terminal_start(void);
+static void terminal_clear(void);
 
 static void (*event_handlers[EVENT_COUNT])(void) = {NULL};
-static void (*input_handler)(char) = NULL;
 
 static terminal_t terminal = {
     .x = 0,
@@ -135,7 +135,7 @@ static terminal_t terminal = {
     .buffer = NULL,
     .buffer_length = 0,
     .append = terminal_append,
-    .show = terminal_show,
+    .stop = terminal_stop,
     .free_buffer = terminal_free_buffer,
     .open = terminal_open,
     .close = terminal_close,
@@ -147,7 +147,8 @@ static terminal_t terminal = {
     .listen = terminal_listen,
     .write = terminal_write,
     .box = terminal_box,
-    .reset = terminal_reset
+    .start = terminal_start,
+    .clear = terminal_clear
 };
 
 // IMPLEMENTATIONS
@@ -196,9 +197,6 @@ static void terminal_listen(terminal_event_t event, void *handler) {
                     terminal.die("sigaction for SIGWINCH");
                 }
                 break;
-            case INPUT:
-                input_handler = (void (*)(char))handler;
-                break;
             default:
                 // No action for unknown event types
                 break;
@@ -226,55 +224,67 @@ static void terminal_draw(const char *str, int x, int y) {
     terminal.append(buf);
 }
 
-static char terminal_input(void) {
-    char c;
-    if (read(STDIN_FILENO, &c, 1) == 1) {
-        if (c == '\x1b') {
-            char seq[3];
-            
-            if (read(STDIN_FILENO, &seq[0], 1) != 1) {
-                if (input_handler) {
-                    input_handler('\x1b');
-                }
-                return '\x1b';
-            }
-            if (read(STDIN_FILENO, &seq[1], 1) != 1) {
-                if (input_handler) {
-                    input_handler('\x1b');
-                }
-                return '\x1b';
-            }
-
-            if (seq[0] == '[') {
-                switch (seq[1]) {
-                    case 'A': c = ARROW_UP; break;
-                    case 'B': c = ARROW_DOWN; break;
-                    case 'C': c = ARROW_RIGHT; break;
-                    case 'D': c = ARROW_LEFT; break;
-                    case '3': 
-                        if (read(STDIN_FILENO, &seq[2], 1) == 1 && seq[2] == '~')
-                            c = DELETE_KEY; break;
-                    default: 
-                        if (input_handler) {
-                            input_handler('\x1b');
-                        }
-                        return '\x1b';
-                }
-            } else {
-                if (input_handler) {
-                    input_handler('\x1b');
-                }
-                return '\x1b';
-            }
+static void terminal_clear() {
+    terminal.buffer_length = 0;
+    for (int i = 0; i < terminal.rows; i++) {
+        for (int j = 0; j < terminal.cols; j++) {
+            terminal.draw(" ", j, i);
         }
-        
-        if (input_handler) {
-            input_handler(c);
-        }
-        return c;
     }
-    return 0;
 }
+
+static char terminal_input(void) {
+    fd_set readfds;
+    struct timeval tv;
+    char c;
+
+    while (1) {
+        FD_ZERO(&readfds);
+        FD_SET(STDIN_FILENO, &readfds);
+
+        // Set timeout to 100 milliseconds
+        tv.tv_sec = 0;
+        tv.tv_usec = 100000;
+
+        int ready = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &tv);
+
+        if (ready == -1) {
+            // Error occurred in select()
+            terminal.die("select");
+        } else if (ready == 0) {
+            // Timeout occurred, no input available
+            // You can perform any background tasks here if needed
+            continue;
+        }
+
+        // Input is available
+        if (FD_ISSET(STDIN_FILENO, &readfds)) {
+            if (read(STDIN_FILENO, &c, 1) == 1) {
+                if (c == '\x1b') {
+                    char seq[3];
+                    
+                    if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b';
+                    if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b';
+
+                    if (seq[0] == '[') {
+                        switch (seq[1]) {
+                            case 'A': return ARROW_UP;
+                            case 'B': return ARROW_DOWN;
+                            case 'C': return ARROW_RIGHT;
+                            case 'D': return ARROW_LEFT;
+                            case '3': 
+                                if (read(STDIN_FILENO, &seq[2], 1) == 1 && seq[2] == '~')
+                                    return DELETE_KEY;
+                        }
+                    }
+                    return '\x1b';
+                }
+                return c;
+            }
+        }
+    }
+}
+
 
 static void terminal_title(const char *t) {
     char buf[512];
@@ -331,16 +341,16 @@ static void terminal_append(const char *data) {
         return;
     }
     memcpy(&new[terminal.buffer_length], data, length);
-    terminal.buffer= new;
+    terminal.buffer = new;
     terminal.buffer_length += length;
 }
 
-static void terminal_reset() {
+static void terminal_start() {
     terminal.append(ANSI_HIDE_CURSOR);
     terminal.append(ANSI_CURSOR_HOME);
 }
 
-static void terminal_show() {
+static void terminal_stop() {
     terminal.append(ANSI_SHOW_CURSOR);
     terminal.cursor(terminal.x + 1, terminal.y + 1);
     write(STDOUT_FILENO, terminal.buffer, terminal.buffer_length);
@@ -380,7 +390,6 @@ static void terminal_close(void) {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &terminal.state) == -1) {
         terminal.die("tcsetattr");
     }
-    exit(0);
 }
 
 static void terminal_open(void) {

@@ -14790,7 +14790,7 @@ Development Tools Engineering Specification\*(R", which can be found on
 <\fBhttp://infocenter.arm.com/help/topic/com.arm.doc.ecm0359818/ECM0359818_armv8m_security_extensions_reqs_on_dev_tools_1_0.pdf\fR>.
 .PP
 \fI\s-1AVR\s0 Options\fR
-.IX Subsection "Compiler Options"
+.IX Subsection "AVR Options"
 .PP
 These options are defined for \s-1AVR\s0 implementations:
 .IP "\fB\-mmcu=\fR\fImcu\fR" 4
@@ -15000,7 +15000,7 @@ Only change the lower 8@tie{}bits of the stack pointer.
 Allow to use truncation instead of rounding towards zero for fractional fixed-point types.
 .IP "\fB\-nodevicelib\fR" 4
 .IX Item "-nodevicelib"
-Don't link against Compiler-LibC's device specific library \f(CW\*(C`lib<mcu>.a\*(C'\fR.
+Don't link against AVR-LibC's device specific library \f(CW\*(C`lib<mcu>.a\*(C'\fR.
 .IP "\fB\-Waddr\-space\-convert\fR" 4
 .IX Item "-Waddr-space-convert"
 Warn about conversions between address spaces in the case where the
@@ -15055,15 +15055,15 @@ name start with \f(CW\*(C`.trampolines\*(C'\fR into the segment where \f(CW\*(C`
 points to.
 .IP "*" 4
 The startup code from libgcc never sets \f(CW\*(C`EIND\*(C'\fR.
-Notice that startup code is a blend of code from libgcc and Compiler-LibC.
-For the impact of Compiler-LibC on \f(CW\*(C`EIND\*(C'\fR, see the
-Compiler-LibC\ user\ manual (\f(CW\*(C`http://nongnu.org/avr\-libc/user\-manual/\*(C'\fR).
+Notice that startup code is a blend of code from libgcc and AVR-LibC.
+For the impact of AVR-LibC on \f(CW\*(C`EIND\*(C'\fR, see the
+AVR-LibC\ user\ manual (\f(CW\*(C`http://nongnu.org/avr\-libc/user\-manual/\*(C'\fR).
 .IP "*" 4
 It is legitimate for user-specific startup code to set up \f(CW\*(C`EIND\*(C'\fR
 early, for example by means of initialization code located in
 section \f(CW\*(C`.init3\*(C'\fR. Such code runs prior to general startup code
 that initializes \s-1RAM\s0 and calls constructors, but after the bit
-of startup code from Compiler-LibC that sets \f(CW\*(C`EIND\*(C'\fR to the segment
+of startup code from AVR-LibC that sets \f(CW\*(C`EIND\*(C'\fR to the segment
 where the vector table is located.
 .Sp
 .Vb 1
@@ -15184,14 +15184,14 @@ If you use inline assembler to read from locations outside the
 you must reset it to zero after the access.
 .PP
 \s-1AVR\s0 Built-in Macros
-.IX Subsection "Compiler Built-in Macros"
+.IX Subsection "AVR Built-in Macros"
 .PP
 \&\s-1GCC\s0 defines several built-in macros so that the user code can test
 for the presence or absence of features.  Almost any of the following
 built-in macros are deduced from device capabilities and thus
 triggered by the \fB\-mmcu=\fR command-line option.
 .PP
-For even more Compiler-specific built-in macros see
+For even more AVR-specific built-in macros see
 \&\fB\s-1AVR\s0 Named Address Spaces\fR and \fB\s-1AVR\s0 Built-in Functions\fR.
 .ie n .IP """_\|_AVR_ARCH_\|_""" 4
 .el .IP "\f(CW_\|_AVR_ARCH_\|_\fR" 4
@@ -15383,7 +15383,7 @@ features like attribute \f(CW\*(C`progmem\*(C'\fR and \f(CW\*(C`pgm_read_*\*(C'\
 .ie n .IP """_\|_WITH_AVRLIBC_\|_""" 4
 .el .IP "\f(CW_\|_WITH_AVRLIBC_\|_\fR" 4
 .IX Item "__WITH_AVRLIBC__"
-The compiler is configured to be used together with Compiler-Libc.
+The compiler is configured to be used together with AVR-Libc.
 See the \fB\-\-with\-avrlibc\fR configure option.
 .PP
 \fIBlackfin Options\fR

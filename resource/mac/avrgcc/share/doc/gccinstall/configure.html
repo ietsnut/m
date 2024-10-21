@@ -1349,12 +1349,12 @@ being used as the target C library.  This causes <code>__eprintf</code> to be
 omitted from <samp><span class="file">libgcc.a</span></samp> on the assumption that it will be provided by
 `<samp><span class="samp">newlib</span></samp>'.
 
-     <br><dt><code>--with-avrlibc</code><dd>Specifies that `<samp><span class="samp">Compiler-Libc</span></samp>' is
+     <br><dt><code>--with-avrlibc</code><dd>Specifies that `<samp><span class="samp">AVR-Libc</span></samp>' is
 being used as the target C library.  This causes float support
 functions like <code>__addsf3</code> to be omitted from <samp><span class="file">libgcc.a</span></samp> on
 the assumption that it will be provided by <samp><span class="file">libm.a</span></samp>.  For more
 technical details, cf. <a href="http://gcc.gnu.org/PR54461">PR54461</a>. 
-This option is only supported for the Compiler target.  It is not supported for
+This option is only supported for the AVR target.  It is not supported for
 RTEMS configurations, which currently use newlib.  The option is
 supported since version 4.7.2 and is the default in 4.8.0 and newer.
 
