@@ -272,7 +272,7 @@ void compile_and_program() {
         need_chmod = false;
         is_macos = true;
     }
-    
+    /*
     if (is_macos) {
         //reapply_quarantine();
 
@@ -283,6 +283,7 @@ void compile_and_program() {
 
         terminal.clear();
         terminal.box(start_x, start_y, window_width, window_height);
+
 
         // write title
         const char *title = "magic mac_osx crap";
@@ -305,21 +306,21 @@ void compile_and_program() {
 
         char response = terminal.input();
 
+
         if (true) {
             terminal.close();
-/*
 
                 for (int i = 0; i < 3; i++) {
                     snprintf(cmd, sizeof(cmd), "sudo spctl --add --label \"AVR-GCC Tool\" %s%s", os_folder, executables[i]);
                     system(cmd);
                 }
-*/
+
             char cmd[512];
             snprintf(cmd, sizeof(cmd), "sudo xattr -r -d com.apple.quarantine %s", os_folder);
             int result = system(cmd);
 
             terminal.open();
-            refresh();
+            terminal.clear();
         }
     }
 
@@ -329,18 +330,20 @@ void compile_and_program() {
         system(cmd);
     }
 
-    
+    */
     // Commands to run
     char commands[4][256];
-    snprintf(commands[0], sizeof(commands[0]), "%savrgcc/bin/avr-gcc%s -g -Os -mmcu=attiny85 -DF_CPU=8000000UL -o blink.elf blink.c", os_folder, exe_ext);
-    snprintf(commands[1], sizeof(commands[1]), "%savrgcc/bin/avr-objcopy%s -O ihex blink.elf blink.hex", os_folder, exe_ext);
-    snprintf(commands[2], sizeof(commands[2]), "%savrdude/avrdude%s -P /dev/cu.usbmodem101 -c stk500v1 -p t85 -b 19200 -U lfuse:w:0xE2:m -U hfuse:w:0xDF:m", os_folder, exe_ext);
-    snprintf(commands[3], sizeof(commands[3]), "%savrdude/avrdude%s -P /dev/cu.usbmodem101 -c stk500v1 -p t85 -b 19200 -U flash:w:blink.hex:i", os_folder, exe_ext);
-    // usb:04d8:00dd
-    // Buffer to store command output
+    snprintf(commands[0], sizeof(commands[0]), "\"%savrgcc/bin/avr-gcc%s\" -g -Os -mmcu=attiny85 -DF_CPU=8000000UL -o blink.elf blink.c 2>&1", os_folder, exe_ext);
+    snprintf(commands[1], sizeof(commands[1]), "\"%savrgcc/bin/avr-objcopy%s\" -O ihex blink.elf blink.hex 2>&1", os_folder, exe_ext);
+    snprintf(commands[2], sizeof(commands[2]), "\"%savrdude/avrdude%s\" -P /dev/cu.usbmodem1101 -c stk500v1 -p t85 -b 19200 -U lfuse:w:0xE2:m -U hfuse:w:0xDF:m 2>&1", os_folder, exe_ext);
+    snprintf(commands[3], sizeof(commands[3]), "\"%savrdude/avrdude%s\" -P /dev/cu.usbmodem1101 -c stk500v1 -p t85 -b 19200 -U flash:w:blink.hex:i 2>&1", os_folder, exe_ext);
+
+    // Execute commands and redirect output to null using shell redirection
+    char redirected_cmd[512];
     int return_codes[4];
     for (int i = 0; i < 4; i++) {
-        return_codes[i] = system(commands[i]);
+        snprintf(redirected_cmd, sizeof(redirected_cmd), "%s > %s 2>&1", commands[i], IsWindows() ? "NUL" : "/dev/null");
+        return_codes[i] = system(redirected_cmd);
         if (return_codes[i] != 0) {
             break; // Stop executing further commands if one fails
         }
@@ -352,7 +355,8 @@ void compile_and_program() {
     int start_x = (terminal.cols - window_width) / 2;
     int start_y = (terminal.rows - window_height) / 2;
 
-    terminal.clear();
+    //terminal.clear();
+    refresh();
     terminal.box(start_x, start_y, window_width, window_height);
 
     // write title
@@ -383,7 +387,7 @@ void compile_and_program() {
 
     // Wait for user input to close the window
     terminal.write("Press any key to continue...", start_x + 2, start_y + window_height - 2);
-    refresh();
+    terminal.draw();
     terminal.input();
 
     // Rewrite the main screen
@@ -404,39 +408,52 @@ void processKey(char c) {
             } else {
                 state = HELPING;
             }
+            refresh();
             break;
         case '!':
             compile_and_program();
+            refresh();
             break;
         case '\r':
             insert_newline();
+            draw_text();
+            terminal.draw();
             break;
         case 127: // Backspace
         case '\b': // Also handle the actual backspace character
             delete_char();
+            draw_text();
+            terminal.draw();
             break;
         case DELETE_KEY:
             delete_char_forward();
+            draw_text();
+            terminal.draw();
             break;
         case ARROW_UP:
             if (terminal.y > 0) terminal.y--;
+            terminal.draw();
             break;
         case ARROW_DOWN:
             if (terminal.y < num_lines - 1) terminal.y++;
+            terminal.draw();
             break;
         case ARROW_LEFT:
             if (terminal.x > 0) terminal.x--;
+            terminal.draw();
             break;
         case ARROW_RIGHT:
             if (terminal.x < strlen(text_buffer[terminal.y])) terminal.x++;
+            terminal.draw();
             break;
         default:
             if (isprint(c)) {
                 insert_char(c);
+                draw_text();
+                terminal.draw();
             }
             break;
     }
-    refresh();
 }
 
 static void handle_resize(void) {

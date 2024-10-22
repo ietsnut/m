@@ -1,4 +1,4 @@
 #define F_CPU 8000000UL
 #include "blink.h"
 
-led
+blink(1000)

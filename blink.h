@@ -2,22 +2,15 @@
 #include <util/delay.h>
 
 #define LED_PIN PB3
-#define DELAY_TIME 1000  // 500ms delay
 
-#define led int main(void){blink();}
-
-int blink(void)
-{
-    DDRB |= (1 << LED_PIN);  // Set PB3 as output
-
-    while (1)
-    {
-        PORTB |= (1 << LED_PIN);   // Turn LED on
-        _delay_ms(DELAY_TIME);     // Wait
-
-        PORTB &= ~(1 << LED_PIN);  // Turn LED off
-        _delay_ms(DELAY_TIME);     // Wait
-    }
-    return 0;
-
+// Define the variadic macro to accept delay as argument
+#define blink(...) int main(void) { \
+    DDRB |= (1 << LED_PIN);          \
+    while (1) {                      \
+        PORTB |= (1 << LED_PIN);     \
+        _delay_ms(__VA_ARGS__);      \
+        PORTB &= ~(1 << LED_PIN);    \
+        _delay_ms(__VA_ARGS__);      \
+    }                                \
+    return 0;                        \
 }
