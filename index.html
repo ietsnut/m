@@ -254,7 +254,7 @@
         canvas.addEventListener('mousedown', (event) => {
             const { row, col } = getGridPosition(event);
             isDrawing = true;
-            isErasing = grid[row][col];
+            //isErasing = grid[row][col];
             toggleCell(row, col, !isErasing);
         });
 
@@ -262,8 +262,17 @@
             if (isDrawing) {
                 const { row, col } = getGridPosition(event);
                 toggleCell(row, col, !isErasing);
+            } else {
+                highlightCell(event);
             }
         });
+
+        document.addEventListener('keyup', event => {
+            if (event.code === 'Space') {
+                isErasing = !isErasing;
+                drawCells();
+            }
+        })
 
         window.addEventListener('mouseup', () => {
             isDrawing = false;
@@ -292,6 +301,33 @@
         canvas.addEventListener('touchend', () => {
             isDrawing = false;
         });
+
+        function highlightCell(event) {
+            const { row, col } = getGridPosition(event);
+            drawCells(); // Redraw the grid and cells
+            
+            const x = col * CELL_SIZE;
+            const y = row * CELL_SIZE;
+            const radius = CELL_SIZE * 0.3; // Adjust the radius for the rounded corners
+
+            // Check if the cell is active (filled) and set the highlight color accordingly
+            const isFilled = grid[row][col];
+            //var highlightColor = isFilled ? '#ccc' : '#202020';
+            highlightColor = isErasing ? '#eee' : '#888';
+            ctx.fillStyle = highlightColor; // Set the fill color based on cell state
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + CELL_SIZE - radius, y);
+            ctx.quadraticCurveTo(x + CELL_SIZE, y, x + CELL_SIZE, y + radius);
+            ctx.lineTo(x + CELL_SIZE, y + CELL_SIZE - radius);
+            ctx.quadraticCurveTo(x + CELL_SIZE, y + CELL_SIZE, x + CELL_SIZE - radius, y + CELL_SIZE);
+            ctx.lineTo(x + radius, y + CELL_SIZE);
+            ctx.quadraticCurveTo(x, y + CELL_SIZE, x, y + CELL_SIZE - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.fill();
+        }
 
         drawCells();
 
