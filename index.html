@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body {
+            cursor: none; /* Hide default cursor since we're using custom crosshair */
+        }
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+            overflow: hidden; /* Prevent scrollbars from appearing */
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            background: white;
+        }
+
+        /* Crosshair styles */
+        .crosshair {
+            position: fixed;
+            pointer-events: none; /* Ensure it doesn't interfere with canvas interactions */
+            z-index: 1000;
+        }
+        .crosshair-vertical {
+            width: 1px;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5);
+            position: fixed;
+            top: 0;
+            transform: translateX(-50%);
+        }
+        .crosshair-horizontal {
+            width: 100vw;
+            height: 1px;
+            background-color: rgba(0, 0, 0, 0.5);
+            position: fixed;
+            left: 0;
+            transform: translateY(-50%);
+        }
+        .crosshair-center {
+            width: 4px;
+            height: 4px;
+            background-color: black;
+            border-radius: 50%;
+            position: fixed;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <!-- Add crosshair elements -->
+    <div class="crosshair">
+        <div class="crosshair-vertical"></div>
+        <div class="crosshair-horizontal"></div>
+        <div class="crosshair-center"></div>
+    </div>
+
+    <div class="container">
+        <canvas id="drawingGrid"></canvas>
+    </div>
+
+    <script>
+        // Add crosshair movement handling
+        document.addEventListener('mousemove', (e) => {
+            const vertical = document.querySelector('.crosshair-vertical');
+            const horizontal = document.querySelector('.crosshair-horizontal');
+            const center = document.querySelector('.crosshair-center');
+            
+            vertical.style.left = `${e.clientX}px`;
+            horizontal.style.top = `${e.clientY}px`;
+            center.style.left = `${e.clientX}px`;
+            center.style.top = `${e.clientY}px`;
+        });
+
+        const GRID_SIZE = 32;
+        const canvas = document.getElementById('drawingGrid');
+        const ctx = canvas.getContext('2d');
+        
+        let maxSize = Math.min(window.innerWidth - 40, window.innerHeight - 100);
+        let CELL_SIZE = Math.floor(maxSize / GRID_SIZE);
+        
+        canvas.width = CELL_SIZE * GRID_SIZE;
+        canvas.height = CELL_SIZE * GRID_SIZE;
+        
+        let grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(false));
+        let isDrawing = false;
+        let isErasing = false;
+
+        function drawGrid() {
+            ctx.strokeStyle = '#eee';
+            ctx.lineWidth = 0.5;
+            
+            for (let i = 0; i <= GRID_SIZE; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * CELL_SIZE, 0);
+                ctx.lineTo(i * CELL_SIZE, GRID_SIZE * CELL_SIZE);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(0, i * CELL_SIZE);
+                ctx.lineTo(GRID_SIZE * CELL_SIZE, i * CELL_SIZE);
+                ctx.stroke();
+            }
+        }
+
+        function drawCells() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            
+            ctx.fillStyle = '#000';
+
+            // First pass: fill all cells
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    if (grid[row][col]) {
+                        ctx.fillRect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+            }
+
+            // Second pass: handle both corner types in one loop
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    if (grid[row][col]) {
+                        const x = col * CELL_SIZE;
+                        const y = row * CELL_SIZE;
+                        const radius = CELL_SIZE * 0.3;
+                        const slopeSize = CELL_SIZE * 0.2;
+
+                        const top = row > 0 ? grid[row-1][col] : false;
+                        const bottom = row < GRID_SIZE-1 ? grid[row+1][col] : false;
+                        const left = col > 0 ? grid[row][col-1] : false;
+                        const right = col < GRID_SIZE-1 ? grid[row][col+1] : false;
+                        const topLeft = row > 0 && col > 0 ? grid[row-1][col-1] : false;
+                        const topRight = row > 0 && col < GRID_SIZE-1 ? grid[row-1][col+1] : false;
+                        const bottomLeft = row < GRID_SIZE-1 && col > 0 ? grid[row+1][col-1] : false;
+                        const bottomRight = row < GRID_SIZE-1 && col < GRID_SIZE-1 ? grid[row+1][col+1] : false;
+
+                        // Handle outer corners
+                        ctx.globalCompositeOperation = 'destination-out';
+                        
+                        if (!left && !top) {
+                            ctx.beginPath();
+                            ctx.moveTo(x, y + radius);
+                            ctx.lineTo(x, y);
+                            ctx.lineTo(x + radius, y);
+                            ctx.quadraticCurveTo(x, y, x, y + radius);
+                            ctx.fill();
+                        }
+                        if (!right && !top) {
+                            ctx.beginPath();
+                            ctx.moveTo(x + CELL_SIZE - radius, y);
+                            ctx.lineTo(x + CELL_SIZE, y);
+                            ctx.lineTo(x + CELL_SIZE, y + radius);
+                            ctx.quadraticCurveTo(x + CELL_SIZE, y, x + CELL_SIZE - radius, y);
+                            ctx.fill();
+                        }
+                        if (!right && !bottom) {
+                            ctx.beginPath();
+                            ctx.moveTo(x + CELL_SIZE, y + CELL_SIZE - radius);
+                            ctx.lineTo(x + CELL_SIZE, y + CELL_SIZE);
+                            ctx.lineTo(x + CELL_SIZE - radius, y + CELL_SIZE);
+                            ctx.quadraticCurveTo(x + CELL_SIZE, y + CELL_SIZE, x + CELL_SIZE, y + CELL_SIZE - radius);
+                            ctx.fill();
+                        }
+                        if (!left && !bottom) {
+                            ctx.beginPath();
+                            ctx.moveTo(x, y + CELL_SIZE - radius);
+                            ctx.lineTo(x, y + CELL_SIZE);
+                            ctx.lineTo(x + radius, y + CELL_SIZE);
+                            ctx.quadraticCurveTo(x, y + CELL_SIZE, x, y + CELL_SIZE - radius);
+                            ctx.fill();
+                        }
+
+                        // Handle inner slopes
+                        ctx.globalCompositeOperation = 'source-over';
+                        
+                        if (left && top && !topLeft) {
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            ctx.lineTo(x - slopeSize, y);
+                            ctx.arc(x - slopeSize, y - slopeSize, slopeSize, Math.PI/2, 0, true);
+                            ctx.lineTo(x, y - slopeSize);
+                            ctx.lineTo(x, y);
+                            ctx.fill();
+                        }
+                        if (right && top && !topRight) {
+                            ctx.beginPath();
+                            ctx.moveTo(x + CELL_SIZE, y);
+                            ctx.lineTo(x + CELL_SIZE + slopeSize, y);
+                            ctx.arc(x + CELL_SIZE + slopeSize, y - slopeSize, slopeSize, Math.PI/2, Math.PI, false);
+                            ctx.lineTo(x + CELL_SIZE, y - slopeSize);
+                            ctx.lineTo(x + CELL_SIZE, y);
+                            ctx.fill();
+                        }
+                        if (right && bottom && !bottomRight) {
+                            ctx.beginPath();
+                            ctx.moveTo(x + CELL_SIZE, y + CELL_SIZE);
+                            ctx.lineTo(x + CELL_SIZE + slopeSize, y + CELL_SIZE);
+                            ctx.arc(x + CELL_SIZE + slopeSize, y + CELL_SIZE + slopeSize, slopeSize, -Math.PI/2, Math.PI, true);
+                            ctx.lineTo(x + CELL_SIZE, y + CELL_SIZE + slopeSize);
+                            ctx.lineTo(x + CELL_SIZE, y + CELL_SIZE);
+                            ctx.fill();
+                        }
+                        if (left && bottom && !bottomLeft) {
+                            ctx.beginPath();
+                            ctx.moveTo(x, y + CELL_SIZE);
+                            ctx.lineTo(x - slopeSize, y + CELL_SIZE);
+                            ctx.arc(x - slopeSize, y + CELL_SIZE + slopeSize, slopeSize, -Math.PI/2, 0, false);
+                            ctx.lineTo(x, y + CELL_SIZE + slopeSize);
+                            ctx.lineTo(x, y + CELL_SIZE);
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        function getGridPosition(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            const col = Math.floor(x / CELL_SIZE);
+            const row = Math.floor(y / CELL_SIZE);
+            
+            return { row, col };
+        }
+
+        function toggleCell(row, col, force) {
+            if (row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE) {
+                if (force !== undefined) {
+                    grid[row][col] = force;
+                } else {
+                    grid[row][col] = !grid[row][col];
+                }
+                drawCells();
+            }
+        }
+
+        canvas.addEventListener('mousedown', (event) => {
+            const { row, col } = getGridPosition(event);
+            isDrawing = true;
+            isErasing = grid[row][col];
+            toggleCell(row, col, !isErasing);
+        });
+
+        canvas.addEventListener('mousemove', (event) => {
+            if (isDrawing) {
+                const { row, col } = getGridPosition(event);
+                toggleCell(row, col, !isErasing);
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('dragstart', (e) => e.preventDefault());
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const { row, col } = getGridPosition(touch);
+            isDrawing = true;
+            isErasing = grid[row][col];
+            toggleCell(row, col, !isErasing);
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (isDrawing) {
+                const touch = e.touches[0];
+                const { row, col } = getGridPosition(touch);
+                toggleCell(row, col, !isErasing);
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isDrawing = false;
+        });
+
+        drawCells();
+
+        window.addEventListener('resize', () => {
+            maxSize = Math.min(window.innerWidth - 40, window.innerHeight - 100);
+            CELL_SIZE = Math.floor(maxSize / GRID_SIZE);
+            
+            canvas.width = CELL_SIZE * GRID_SIZE;
+            canvas.height = CELL_SIZE * GRID_SIZE;
+            
+            drawCells();
+        });
+    </script>
+</body>
+</html>
