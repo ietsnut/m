@@ -56,8 +56,6 @@
 #define ANSI_SCROLL_UP                "\x1b[%dS"
 #define ANSI_SCROLL_DOWN              "\x1b[%dT"
 
-#define ANSI_PINK                     "\x1b[95m"
-
 #define ARROW_UP                      '\x41'
 #define ARROW_DOWN                    '\x42'
 #define ARROW_RIGHT                   '\x43'
@@ -89,7 +87,6 @@ struct terminal_t {
     int buffer_length;
 
     void (*append)          (const char *data);
-    void (*stop)            (void);
     void (*free_buffer)     (void);
     void (*open)            (void);
     void (*close)           (void);
@@ -97,11 +94,10 @@ struct terminal_t {
     void (*title)           (const char *t);
     char (*input)           (void);
     void (*cursor)          (int x, int y);
-    void (*draw)            (const char *str, int x, int y);
+    void (*draw)            (void);
     void (*listen)          (terminal_event_t event, void *handler);
-    void (*write)           (const char *str, const char *format_start, int x, int y);
+    void (*write)           (const char *str, int x, int y);
     void (*box)             (int x, int y, int width, int height);
-    void (*start)           (void);
     void (*clear)           (void);
 
 };
@@ -109,7 +105,7 @@ struct terminal_t {
 // METHODS
 
 static void terminal_append(const char *data);
-static void terminal_stop(void);
+static void terminal_draw(void);
 static void terminal_free_buffer(void);
 static void terminal_open(void);
 static void terminal_close(void);
@@ -118,12 +114,10 @@ static void terminal_title(const char *t);
 static int  terminal_resize(void);
 static char terminal_input();
 static void terminal_cursor(int x, int y);
-static void terminal_draw(const char *str, int x, int y);
 static void terminal_listen(terminal_event_t event, void *handler);
-static void terminal_write(const char *str, const char *format_start, int x, int y);
 static void terminal_box(int x, int y, int width, int height);
-static void terminal_start(void);
 static void terminal_clear(void);
+static void terminal_write(const char *str, int x, int y);
 
 static void (*event_handlers[EVENT_COUNT])(void) = {NULL};
 
@@ -135,7 +129,7 @@ static terminal_t terminal = {
     .buffer = NULL,
     .buffer_length = 0,
     .append = terminal_append,
-    .stop = terminal_stop,
+    .draw = terminal_draw,
     .free_buffer = terminal_free_buffer,
     .open = terminal_open,
     .close = terminal_close,
@@ -143,36 +137,29 @@ static terminal_t terminal = {
     .title = terminal_title,
     .input = terminal_input,
     .cursor = terminal_cursor,
-    .draw = terminal_draw,
     .listen = terminal_listen,
     .write = terminal_write,
     .box = terminal_box,
-    .start = terminal_start,
     .clear = terminal_clear
 };
 
 // IMPLEMENTATIONS
 
 static void terminal_box(int x, int y, int width, int height) {
-    // Draw top border
-    terminal_draw(top_left, x, y);
+    terminal.write(top_left, x, y);
     for (int i = 1; i < width - 1; i++) {
-        terminal_draw(horizontal, x + i, y);
+        terminal.write(horizontal, x + i, y);
     }
-    terminal_draw(top_right, x + width - 1, y);
-
-    // Draw side borders
+    terminal.write(top_right, x + width - 1, y);
     for (int i = 1; i < height - 1; i++) {
-        terminal_draw(vertical, x, y + i);
-        terminal_draw(vertical, x + width - 1, y + i);
+        terminal.write(vertical, x, y + i);
+        terminal.write(vertical, x + width - 1, y + i);
     }
-
-    // Draw bottom border
-    terminal_draw(bottom_left, x, y + height - 1);
+    terminal.write(bottom_left, x, y + height - 1);
     for (int i = 1; i < width - 1; i++) {
-        terminal_draw(horizontal, x + i, y + height - 1);
+        terminal.write(horizontal, x + i, y + height - 1);
     }
-    terminal_draw(bottom_right, x + width - 1, y + height - 1);
+    terminal.write(bottom_right, x + width - 1, y + height - 1);
 }
 
 static void signal_handler(int sig) {
@@ -204,10 +191,10 @@ static void terminal_listen(terminal_event_t event, void *handler) {
     }
 }
 
-static void terminal_write(const char *str, const char *format_start, int x, int y) {
-    char formatted_str[1024]; // Adjust size as needed
-    snprintf(formatted_str, sizeof(formatted_str), "%s%s%s", format_start, str, ANSI_RESET_ATTRIBUTES);
-    terminal_draw(formatted_str, x, y);
+
+static void terminal_write(const char *str, int x, int y) {
+    terminal.cursor(x, y);
+    terminal.append(str);
 }
 
 static void terminal_cursor(int x, int y) {
@@ -216,73 +203,31 @@ static void terminal_cursor(int x, int y) {
     terminal.append(cbuf);
 }
 
-static void terminal_draw(const char *str, int x, int y) {
-    terminal.cursor(x, y);
-    terminal.append(str);
-    char buf[32];
-    snprintf(buf, sizeof(buf), ANSI_CURSOR_BACKWARD, strlen(str));
-    terminal.append(buf);
-}
-
-static void terminal_clear() {
-    terminal.buffer_length = 0;
-    for (int i = 0; i < terminal.rows; i++) {
-        for (int j = 0; j < terminal.cols; j++) {
-            terminal.draw(" ", j, i);
-        }
-    }
-}
-
 static char terminal_input(void) {
-    fd_set readfds;
-    struct timeval tv;
     char c;
+    while (read(STDIN_FILENO, &c, 1) != 1) {
+        // Keep waiting for input
+    }
+    if (c == '\x1b') {
+        char seq[3];
+        
+        if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b';
+        if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b';
 
-    while (1) {
-        FD_ZERO(&readfds);
-        FD_SET(STDIN_FILENO, &readfds);
-
-        // Set timeout to 100 milliseconds
-        tv.tv_sec = 0;
-        tv.tv_usec = 100000;
-
-        int ready = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &tv);
-
-        if (ready == -1) {
-            // Error occurred in select()
-            terminal.die("select");
-        } else if (ready == 0) {
-            // Timeout occurred, no input available
-            // You can perform any background tasks here if needed
-            continue;
-        }
-
-        // Input is available
-        if (FD_ISSET(STDIN_FILENO, &readfds)) {
-            if (read(STDIN_FILENO, &c, 1) == 1) {
-                if (c == '\x1b') {
-                    char seq[3];
-                    
-                    if (read(STDIN_FILENO, &seq[0], 1) != 1) return '\x1b';
-                    if (read(STDIN_FILENO, &seq[1], 1) != 1) return '\x1b';
-
-                    if (seq[0] == '[') {
-                        switch (seq[1]) {
-                            case 'A': return ARROW_UP;
-                            case 'B': return ARROW_DOWN;
-                            case 'C': return ARROW_RIGHT;
-                            case 'D': return ARROW_LEFT;
-                            case '3': 
-                                if (read(STDIN_FILENO, &seq[2], 1) == 1 && seq[2] == '~')
-                                    return DELETE_KEY;
-                        }
-                    }
-                    return '\x1b';
-                }
-                return c;
+        if (seq[0] == '[') {
+            switch (seq[1]) {
+                case 'A': return ARROW_UP;
+                case 'B': return ARROW_DOWN;
+                case 'C': return ARROW_RIGHT;
+                case 'D': return ARROW_LEFT;
+                case '3': 
+                    if (read(STDIN_FILENO, &seq[2], 1) == 1 && seq[2] == '~')
+                        return DELETE_KEY;
             }
         }
+        return '\x1b';
     }
+    return c;
 }
 
 
@@ -345,15 +290,17 @@ static void terminal_append(const char *data) {
     terminal.buffer_length += length;
 }
 
-static void terminal_start() {
+static void terminal_clear(void) {
     terminal.append(ANSI_HIDE_CURSOR);
-    terminal.append(ANSI_CURSOR_HOME);
+    terminal.buffer_length = 0;
+    terminal.append(ANSI_CLEAR_SCREEN);    // Clear entire screen
+    terminal.append(ANSI_CURSOR_HOME);     // Reset cursor to home position
 }
 
-static void terminal_stop() {
-    terminal.append(ANSI_SHOW_CURSOR);
+static void terminal_draw(void) {
     terminal.cursor(terminal.x + 1, terminal.y + 1);
     write(STDOUT_FILENO, terminal.buffer, terminal.buffer_length);
+    terminal.append(ANSI_SHOW_CURSOR);
     terminal.buffer_length = 0;
 }
 

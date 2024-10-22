@@ -104,8 +104,7 @@ void delete_char_forward() {
 
 void insert_newline() {
     if (num_lines < MAX_LINES - 1) {
-        memmove(&text_buffer[terminal.y + 2], &text_buffer[terminal.y + 1], 
-                (MAX_LINES - terminal.y - 2) * sizeof(char*));
+        memmove(&text_buffer[terminal.y + 2], &text_buffer[terminal.y + 1], (MAX_LINES - terminal.y - 2) * sizeof(char*));
         text_buffer[terminal.y + 1] = malloc(MAX_LINE_LENGTH * sizeof(char));
         strcpy(text_buffer[terminal.y + 1], &text_buffer[terminal.y][terminal.x]);
         text_buffer[terminal.y][terminal.x] = '\0';
@@ -125,9 +124,9 @@ void draw_text() {
             int len = strlen(text_buffer[line]);
             for (int j = 0; j < editor_width; j++) {
                 if (j < len) {
-                    terminal.draw(&text_buffer[line][j], j + 1, i + 1);
+                    terminal.write(&text_buffer[line][j], j + 1, i + 1);
                 } else {
-                    terminal.draw(" ", j + 1, i + 1);
+                    terminal.write(" ", j + 1, i + 1);
                 }
             }
         }
@@ -147,15 +146,15 @@ void draw() {
     int padding_right = content_width - welcomelen - padding_left;
 
     for (int i = 0; i < padding_left; i++) {
-        terminal.draw(horizontal, 1 + i, 0);
+        terminal.write(horizontal, 1 + i, 0);
     }
 
     if (welcomelen > 0) {
-        terminal.draw("┤ MEDITOR ├", 1 + padding_left, 0);
+        terminal.write("┤ MEDITOR ├", 1 + padding_left, 0);
     }
 
     for (int i = 0; i < padding_right; i++) {
-        terminal.draw(horizontal, 1 + padding_left + welcomelen + i, 0);
+        terminal.write(horizontal, 1 + padding_left + welcomelen + i, 0);
     }
 
     draw_text();
@@ -173,25 +172,25 @@ void draw_ascii_image() {
     // Draw the box
     terminal.box(start_x, start_y, box_width, box_height);
 
-    // Draw top title
-    terminal.draw("╭─────────────────╮", start_x + (box_width - 18) / 2, start_y - 1);
-    terminal.draw("┤ MICROCONTROLLER ├", start_x + (box_width - 18) / 2, start_y);
-    terminal.draw("╰─────────────────╯", start_x + (box_width - 18) / 2, start_y + 1);
+    // write top title
+    terminal.write("╭─────────────────╮", start_x + (box_width - 18) / 2, start_y - 1);
+    terminal.write("┤ MICROCONTROLLER ├", start_x + (box_width - 18) / 2, start_y);
+    terminal.write("╰─────────────────╯", start_x + (box_width - 18) / 2, start_y + 1);
 
-    // Draw image
+    // write image
     for (int i = 0; i < ASCII_IMAGE_HEIGHT; i++) {
         for (int j = 0; j < left_padding; j++) {
-            terminal.draw(" ", start_x + 1 + j, start_y + top_padding + i + 1);
+            terminal.write(" ", start_x + 1 + j, start_y + top_padding + i + 1);
         }
-        terminal.draw(ascii_image[i], start_x + 1 + left_padding, start_y + top_padding + i + 1);
+        terminal.write(ascii_image[i], start_x + 1 + left_padding, start_y + top_padding + i + 1);
         for (int j = 0; j < right_padding - 1; j++) {
-            terminal.draw(" ", start_x + 1 + left_padding + ASCII_IMAGE_WIDTH + j, start_y + top_padding + i + 1);
+            terminal.write(" ", start_x + 1 + left_padding + ASCII_IMAGE_WIDTH + j, start_y + top_padding + i + 1);
         }
     }
 }
 
 void refresh() {
-    terminal.start();
+    terminal.clear();
     switch(state) {
         case HELPING:
             draw();
@@ -199,14 +198,14 @@ void refresh() {
             break;
         case EXTRACTING:
             draw();
-            terminal.write("*", ANSI_PINK, (terminal.cols/2)-(strlen("*")/2), terminal.rows/2);
+            terminal.write("*", (terminal.cols/2)-(strlen("*")/2), terminal.rows/2);
             break;
         case DEFAULT:
             draw();
             break;
     }
-    terminal.cursor(terminal.x + 1, terminal.y - scroll_offset + 1);
-    terminal.stop();
+    //terminal.cursor(terminal.x + 1, terminal.y - scroll_offset + 1);
+    terminal.draw();
 }
 
 void write_headers_to_file(FILE *fp) {
@@ -226,22 +225,22 @@ void reapply_quarantine() {
 
     terminal.clear();
     terminal.box(start_x, start_y, window_width, window_height);
-    terminal.draw("Reapplying Quarantine", start_x + (window_width - 22) / 2, start_y);
-    terminal.draw("Processing...", start_x + (window_width - 13) / 2, start_y + 3);
-    terminal.stop();
+    terminal.write("Reapplying Quarantine", start_x + (window_width - 22) / 2, start_y);
+    terminal.write("Processing...", start_x + (window_width - 13) / 2, start_y + 3);
+    terminal.draw();
 
     int result = system(cmd);
 
     terminal.clear();
     terminal.box(start_x, start_y, window_width, window_height);
     if (result == 0) {
-        terminal.draw("Quarantine attributes reapplied successfully.", start_x + 2, start_y + 3);
+        terminal.write("Quarantine attributes reapplied successfully.", start_x + 2, start_y + 3);
     } else {
-        terminal.draw("Failed to reapply quarantine attributes.", start_x + 2, start_y + 3);
+        terminal.write("Failed to reapply quarantine attributes.", start_x + 2, start_y + 3);
     }
-    terminal.draw("Press any key to continue...", start_x + 2, start_y + 5);
+    terminal.write("Press any key to continue...", start_x + 2, start_y + 5);
     terminal.cursor(start_x + 28, start_y + 5);
-    terminal.stop();
+    terminal.draw();
     terminal.input();
 }
 
@@ -285,23 +284,23 @@ void compile_and_program() {
         terminal.clear();
         terminal.box(start_x, start_y, window_width, window_height);
 
-        // Draw title
+        // write title
         const char *title = "magic mac_osx crap";
-        terminal.draw(title, start_x + (window_width - strlen(title)) / 2, start_y);
+        terminal.write(title, start_x + (window_width - strlen(title)) / 2, start_y);
 
-        // Draw message
+        // write message
         const char *msg1 = "why the fuck do u use a mac";
         const char *msg2 = "click to let me hack";
         const char *msg3 = "ur shitty cutting board";
-        terminal.draw(msg1, start_x + 2, start_y + 2);
-        terminal.draw(msg2, start_x + 2, start_y + 3);
-        terminal.draw(msg3, start_x + 2, start_y + 4);
+        terminal.write(msg1, start_x + 2, start_y + 2);
+        terminal.write(msg2, start_x + 2, start_y + 3);
+        terminal.write(msg3, start_x + 2, start_y + 4);
 
-        // Draw prompt
+        // write prompt
         const char *prompt = "Do you want to proceed? (y/n): ";
-        terminal.draw(prompt, start_x + 2, start_y + 6);
+        terminal.write(prompt, start_x + 2, start_y + 6);
         //terminal.cursor(start_x + 2 + strlen(prompt), start_y + 6);
-        terminal.stop();
+        terminal.draw();
 
 
         char response = terminal.input();
@@ -356,11 +355,11 @@ void compile_and_program() {
     terminal.clear();
     terminal.box(start_x, start_y, window_width, window_height);
 
-    // Draw title
+    // write title
     const char *title = "Compilation and Programming Results";
-    terminal.draw(title, start_x + (window_width - strlen(title)) / 2, start_y);
+    terminal.write(title, start_x + (window_width - strlen(title)) / 2, start_y);
 
-    // Draw return codes
+    // write return codes
     for (int i = 0; i < 4; i++) {
         char result[40];
         switch (i) {
@@ -379,25 +378,21 @@ void compile_and_program() {
         }
         
         
-        terminal.draw(result, start_x + 2, start_y + 2 + i);
+        terminal.write(result, start_x + 2, start_y + 2 + i);
     }
 
     // Wait for user input to close the window
-    terminal.draw("Press any key to continue...", start_x + 2, start_y + window_height - 2);
+    terminal.write("Press any key to continue...", start_x + 2, start_y + window_height - 2);
     refresh();
     terminal.input();
 
-    // Redraw the main screen
+    // Rewrite the main screen
     refresh();
 }
 
 
 
 void processKey(char c) {
-    terminal.clear();
-    char debug_msg[100];
-    snprintf(debug_msg, sizeof(debug_msg), "Key pressed: %d", c);
-    terminal.draw(debug_msg, 2, terminal.rows - 2);
     switch (c) {
         case '\x1b':
             terminal.close();
@@ -445,7 +440,6 @@ void processKey(char c) {
 }
 
 static void handle_resize(void) {
-    terminal.clear();
     refresh();
 }
 
