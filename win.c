@@ -1,171 +1,219 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <termios.h>
+#include <unistd.h>
+#include <stdlib.h>
 
-// Constants for port and hex file
-#define SERIAL_PORT "/dev/cu.usbmodem1101"
-#define HEX_FILE "blink.hex"
+#define STK_OK 0x10
+#define STK_FAILED 0x11
+#define STK_UNKNOWN 0x12
+#define STK_NODEVICE 0x13
+#define STK_INSYNC 0x14
+#define STK_NOSYNC 0x15
+#define CRC_EOP 0x20
 
-// STK500 constants
-#define STK_OK              0x10
-#define STK_FAILED          0x11
-#define STK_INSYNC          0x14
-#define STK_NOSYNC          0x15
-#define STK_GET_SYNC        0x30
-#define STK_ENTER_PROGMODE  0x50
-#define STK_LOAD_ADDRESS    0x55
-#define STK_PROG_PAGE       0x64
-#define STK_LEAVE_PROGMODE  0x51
-#define CRC_EOP             0x20
+// STK500 commands we'll use
+#define STK_GET_SYNC 0x30
+#define STK_SET_DEVICE 0x42
+#define STK_ENTER_PROGMODE 0x50
+#define STK_LOAD_ADDRESS 0x55
+#define STK_PROG_PAGE 0x64
+#define STK_LEAVE_PROGMODE 0x51
 
-int open_serial(const char* port) {
-    int serial_port = open(port, O_RDWR);
-    if (serial_port < 0) {
-        perror("Unable to open serial port");
-        exit(1);
+int open_serial(const char *port) {
+    int fd = open(port, O_RDWR | O_NOCTTY);
+    if (fd < 0) {
+        fprintf(stderr, "Error opening %s: %s\n", port, strerror(errno));
+        return -1;
     }
 
     struct termios tty;
-    if (tcgetattr(serial_port, &tty) != 0) {
-        perror("tcgetattr error");
-        close(serial_port);
-        exit(1);
+    memset(&tty, 0, sizeof(tty));
+
+    if (tcgetattr(fd, &tty) != 0) {
+        fprintf(stderr, "Error from tcgetattr: %s\n", strerror(errno));
+        close(fd);
+        return -1;
     }
 
-    cfsetispeed(&tty, B19200);
-    cfsetospeed(&tty, B19200);
+    cfsetospeed(&tty, B115200);
+    cfsetispeed(&tty, B115200);
+
     tty.c_cflag &= ~PARENB;
     tty.c_cflag &= ~CSTOPB;
     tty.c_cflag &= ~CSIZE;
     tty.c_cflag |= CS8;
+    tty.c_cflag &= ~CRTSCTS;
     tty.c_cflag |= CREAD | CLOCAL;
+
     tty.c_lflag &= ~ICANON;
     tty.c_lflag &= ~ECHO;
     tty.c_lflag &= ~ECHOE;
+    tty.c_lflag &= ~ECHONL;
     tty.c_lflag &= ~ISIG;
+    tty.c_iflag &= ~(IXON | IXOFF | IXANY);
+    tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL);
     tty.c_oflag &= ~OPOST;
-    tty.c_cc[VMIN] = 0;    // Changed to non-blocking
-    tty.c_cc[VTIME] = 100; // 10 second timeout
+    tty.c_oflag &= ~ONLCR;
 
-    if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
-        perror("tcsetattr error");
-        close(serial_port);
-        exit(1);
+    tty.c_cc[VTIME] = 10;  // 1 second timeout
+    tty.c_cc[VMIN] = 0;
+
+    if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+        fprintf(stderr, "Error from tcsetattr: %s\n", strerror(errno));
+        close(fd);
+        return -1;
     }
-    return serial_port;
+
+    return fd;
 }
 
-int get_sync(int serial) {
-    unsigned char sync_cmd[] = {STK_GET_SYNC, CRC_EOP};
-    unsigned char response[2];
-    int retry_count = 0;
+int send_command(int fd, uint8_t cmd, uint8_t *data, int len, uint8_t *response, int resp_len) {
+    uint8_t sync_cmd[] = {cmd};
+    write(fd, sync_cmd, 1);
     
-    while (retry_count < 3) {
-        // Flush any existing data
-        tcflush(serial, TCIOFLUSH);
-        
-        // Send sync command
-        write(serial, sync_cmd, sizeof(sync_cmd));
-        usleep(100000); // Wait 100ms
-        
-        // Read response
-        int bytes_read = read(serial, response, 2);
-        if (bytes_read == 2 && response[0] == STK_INSYNC && response[1] == STK_OK) {
-            return 0;
+    if (data && len > 0) {
+        write(fd, data, len);
+    }
+    
+    uint8_t eop[] = {CRC_EOP};
+    write(fd, eop, 1);
+
+    if (response && resp_len > 0) {
+        int n = read(fd, response, resp_len);
+        if (n != resp_len) {
+            fprintf(stderr, "Error: Expected %d bytes, got %d\n", resp_len, n);
+            return -1;
         }
-        
-        retry_count++;
-        usleep(200000); // Wait 200ms before retry
     }
-    return -1;
+
+    return 0;
 }
 
-void stk_send(int serial, unsigned char *cmd, int len) {
-    // Add CRC_EOP to the end of every command
-    write(serial, cmd, len);
-    write(serial, &(unsigned char){CRC_EOP}, 1);
-    
-    // Read two bytes: INSYNC and OK
-    unsigned char response[2];
-    read(serial, response, 2);
-    
-    if (response[0] != STK_INSYNC || response[1] != STK_OK) {
-        fprintf(stderr, "STK500 command failed with response: 0x%02X 0x%02X\n", 
-                response[0], response[1]);
-        exit(1);
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <serial port> <hex file>\n", argv[0]);
+        return 1;
     }
-}
 
-void stk500_program(int serial, const char* hex_file_path) {
-    // First establish sync
-    printf("Establishing sync with programmer...\n");
-    if (get_sync(serial) != 0) {
-        fprintf(stderr, "Failed to sync with programmer\n");
-        exit(1);
+    int fd = open_serial(argv[1]);
+    if (fd < 0) return 1;
+
+    printf("Synchronizing...\n");
+    uint8_t response[2];
+    for (int i = 0; i < 5; i++) {
+        if (send_command(fd, STK_GET_SYNC, NULL, 0, response, 2) == 0) {
+            if (response[0] == STK_INSYNC && response[1] == STK_OK) {
+                printf("Synchronized!\n");
+                break;
+            }
+        }
+        usleep(50000);
+        if (i == 4) {
+            fprintf(stderr, "Failed to synchronize with programmer\n");
+            close(fd);
+            return 1;
+        }
     }
-    printf("Sync established\n");
 
-    FILE* hex_file = fopen(hex_file_path, "r");
-    if (!hex_file) {
-        perror("Error opening hex file");
-        exit(1);
+    // Set device parameters for ATtiny85
+    printf("Setting device parameters for ATtiny85...\n");
+    uint8_t device_params[] = {
+        0x1E, // devicecode: ATtiny85
+        0x00, // revision
+        0x00, // progtype
+        0x01, // parmode
+        0x01, // polling
+        0x01, // selftimed
+        0x01, // lockbytes
+        0x03, // fusebytes (3 fuse bytes for ATtiny85)
+        0xFF, // flashpollval1
+        0xFF, // flashpollval2
+        0xFF, // eeprompollval1
+        0xFF, // eeprompollval2
+        0x00, // pagesizehigh
+        0x20, // pagesizelow (32 bytes page size for ATtiny85)
+        0x00, // eepromsizehigh
+        0x80, // eepromsizelow (512 bytes EEPROM)
+        0x00, // flashsize4
+        0x00, // flashsize3
+        0x20, // flashsize2
+        0x00  // flashsize1 (8K flash = 0x2000 bytes)
+    };
+    
+    if (send_command(fd, STK_SET_DEVICE, device_params, sizeof(device_params), response, 2) < 0) {
+        fprintf(stderr, "Failed to set device parameters\n");
+        close(fd);
+        return 1;
     }
 
     printf("Entering programming mode...\n");
-    unsigned char enter_prog[] = {STK_ENTER_PROGMODE};
-    stk_send(serial, enter_prog, sizeof(enter_prog));
-
-    char line[256];
-    int total_bytes = 0;
-    printf("Programming flash memory...\n");
-    
-    while (fgets(line, sizeof(line), hex_file)) {
-        if (line[0] != ':') continue;  // Invalid line
-        
-        int byte_count, address, record_type;
-        sscanf(line + 1, "%02x%04x%02x", &byte_count, &address, &record_type);
-
-        if (record_type == 1) break;  // End of file record
-
-        unsigned char load_address[] = {STK_LOAD_ADDRESS, (address >> 8) & 0xFF, address & 0xFF};
-        stk_send(serial, load_address, sizeof(load_address));
-
-        unsigned char data[byte_count];
-        for (int i = 0; i < byte_count; i++) {
-            int value;
-            sscanf(line + 9 + (i * 2), "%02x", &value);
-            data[i] = (unsigned char)value;
-        }
-
-        unsigned char prog_page[4 + byte_count];
-        prog_page[0] = STK_PROG_PAGE;
-        prog_page[1] = (byte_count >> 8) & 0xFF;
-        prog_page[2] = byte_count & 0xFF;
-        prog_page[3] = 'F';  // Flash memory
-        memcpy(&prog_page[4], data, byte_count);
-        stk_send(serial, prog_page, sizeof(prog_page));
-        
-        total_bytes += byte_count;
-        printf("Wrote %d bytes at address 0x%04X\r", byte_count, address);
-        fflush(stdout);
+    if (send_command(fd, STK_ENTER_PROGMODE, NULL, 0, response, 2) < 0) {
+        fprintf(stderr, "Failed to enter programming mode\n");
+        close(fd);
+        return 1;
     }
 
-    printf("\nTotal bytes programmed: %d\n", total_bytes);
-    printf("Leaving programming mode...\n");
-    unsigned char leave_prog[] = {STK_LEAVE_PROGMODE};
-    stk_send(serial, leave_prog, sizeof(leave_prog));
+    FILE *hex_file = fopen(argv[2], "rb");
+    if (!hex_file) {
+        fprintf(stderr, "Error opening hex file: %s\n", strerror(errno));
+        close(fd);
+        return 1;
+    }
 
+    char line[256];
+    uint16_t address = 0;
+    uint8_t page_buffer[32];  // ATtiny85 has 32-byte pages
+    int page_size = 32;       // ATtiny85 page size
+    
+    printf("Programming flash...\n");
+    while (fgets(line, sizeof(line), hex_file)) {
+        if (line[0] != ':') continue;
+        
+        int len, addr, type;
+        sscanf(line + 1, "%02x%04x%02x", &len, &addr, &type);
+        
+        if (type == 0) {
+            uint8_t addr_data[] = {addr & 0xFF, (addr >> 8) & 0xFF};
+            if (send_command(fd, STK_LOAD_ADDRESS, addr_data, 2, response, 2) < 0) {
+                fprintf(stderr, "Failed to set address\n");
+                break;
+            }
+            
+            uint8_t prog_data[page_size + 4];
+            prog_data[0] = 0x00;
+            prog_data[1] = (page_size >> 8) & 0xFF;
+            prog_data[2] = page_size & 0xFF;
+            prog_data[3] = 'F';
+            
+            for (int i = 0; i < len; i++) {
+                int byte;
+                sscanf(line + 9 + (i * 2), "%02x", &byte);
+                prog_data[4 + i] = byte;
+            }
+            
+            if (send_command(fd, STK_PROG_PAGE, prog_data, len + 4, response, 2) < 0) {
+                fprintf(stderr, "Failed to program page\n");
+                break;
+            }
+            
+            printf(".");
+            fflush(stdout);
+        }
+    }
+    printf("\nProgramming complete!\n");
+    
     fclose(hex_file);
-    printf("Programming complete!\n");
-}
 
-int main() {
-    printf("Opening serial port %s...\n", SERIAL_PORT);
-    int serial = open_serial(SERIAL_PORT);
-    stk500_program(serial, HEX_FILE);
-    close(serial);
+    printf("Leaving programming mode...\n");
+    if (send_command(fd, STK_LEAVE_PROGMODE, NULL, 0, response, 2) < 0) {
+        fprintf(stderr, "Failed to leave programming mode\n");
+        close(fd);
+        return 1;
+    }
+
+    close(fd);
     return 0;
 }
