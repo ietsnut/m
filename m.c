@@ -12,8 +12,8 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include "terminal.h"
-#include "resource.h"
+#include "lib/terminal.h"
+#include "lib/resource.h"
 
 #define VERSION "0.0.1"
 #define MAX_LINES 1000

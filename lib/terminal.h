@@ -62,14 +62,20 @@
 #define ARROW_LEFT                    '\x44'
 #define DELETE_KEY                    '\x7E'
 
-#define WRITE_ANSI(code) write(STDOUT_FILENO, code, strlen(code))
-
-const char *top_left      = "╭";
-const char *top_right     = "╮";
-const char *bottom_left   = "╰";
-const char *bottom_right  = "╯";
+const char *top_left      = "┌";
+const char *top_right     = "┐";
+const char *bottom_left   = "└";
+const char *bottom_right  = "┘";
 const char *horizontal    = "─";
 const char *vertical      = "│";
+
+const char *all_join      = "┼";
+const char *top_join      = "┴";
+const char *bottom_join   = "┬";
+const char *right_join    = "├";
+const char *left_join     = "┤";
+
+const char *square_fill   = "█";
 
 typedef struct terminal_t terminal_t;
 
@@ -99,6 +105,7 @@ struct terminal_t {
     void (*write)           (const char *str, int x, int y);
     void (*box)             (int x, int y, int width, int height);
     void (*clear)           (void);
+    void (*setting)         (const char *op);
 
 };
 
@@ -118,6 +125,7 @@ static void terminal_listen(terminal_event_t event, void *handler);
 static void terminal_box(int x, int y, int width, int height);
 static void terminal_clear(void);
 static void terminal_write(const char *str, int x, int y);
+static void terminal_setting(const char *op);
 
 static void (*event_handlers[EVENT_COUNT])(void) = {NULL};
 
@@ -140,7 +148,8 @@ static terminal_t terminal = {
     .listen = terminal_listen,
     .write = terminal_write,
     .box = terminal_box,
-    .clear = terminal_clear
+    .clear = terminal_clear,
+    .setting = terminal_setting
 };
 
 // IMPLEMENTATIONS
@@ -191,6 +200,9 @@ static void terminal_listen(terminal_event_t event, void *handler) {
     }
 }
 
+static void terminal_setting(const char *op) {
+    write(STDOUT_FILENO, op, strlen(op));
+}
 
 static void terminal_write(const char *str, int x, int y) {
     terminal.cursor(x, y);
@@ -298,7 +310,7 @@ static void terminal_clear(void) {
 }
 
 static void terminal_draw(void) {
-    terminal.cursor(terminal.x + 1, terminal.y + 1);
+    //terminal.cursor(terminal.x + 1, terminal.y + 1);
     write(STDOUT_FILENO, terminal.buffer, terminal.buffer_length);
     terminal.append(ANSI_SHOW_CURSOR);
     terminal.buffer_length = 0;
@@ -312,27 +324,27 @@ static void terminal_free_buffer(void) {
 
 static void terminal_die(const char *s) {
     terminal.free_buffer();
-    WRITE_ANSI(ANSI_ALT_SCREEN_OFF);
-    //WRITE_ANSI(ANSI_CLEAR_SCREEN);
-    WRITE_ANSI(ANSI_CURSOR_HOME);
+    terminal.setting(ANSI_ALT_SCREEN_OFF);
+    //terminal.setting(ANSI_CLEAR_SCREEN);
+    terminal.setting(ANSI_CURSOR_HOME);
     perror(s);
     exit(1);
 }
 
 static void terminal_cleanup(void) {
     terminal.free_buffer();
-    WRITE_ANSI(ANSI_ALT_SCREEN_OFF);
-    WRITE_ANSI(ANSI_CLEAR_SCROLLBACK);
+    terminal.setting(ANSI_ALT_SCREEN_OFF);
+    terminal.setting(ANSI_CLEAR_SCROLLBACK);
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &terminal.state) == -1) {
         terminal.die("tcsetattr");
     }
 }
 
 static void terminal_close(void) {
-    WRITE_ANSI(ANSI_ALT_SCREEN_OFF);
-    WRITE_ANSI(ANSI_CLEAR_SCROLLBACK);
-    //WRITE_ANSI(ANSI_CLEAR_SCREEN);
-    WRITE_ANSI(ANSI_CURSOR_HOME);
+    terminal.setting(ANSI_ALT_SCREEN_OFF);
+    terminal.setting(ANSI_CLEAR_SCROLLBACK);
+    //terminal.setting(ANSI_CLEAR_SCREEN);
+    terminal.setting(ANSI_CURSOR_HOME);
     terminal.free_buffer();
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &terminal.state) == -1) {
         terminal.die("tcsetattr");
@@ -358,9 +370,9 @@ static void terminal_open(void) {
     terminal.y = 0;
     terminal_resize();
 
-    WRITE_ANSI(ANSI_ALT_SCREEN_ON);  // Use alternate screen buffer
-    WRITE_ANSI(ANSI_CLEAR_SCROLLBACK);   // Clear scrollback buffer
-    WRITE_ANSI(ANSI_RESET_SCROLL_REGION);       // Disable scrolling for entire screen
+    terminal.setting(ANSI_ALT_SCREEN_ON);  // Use alternate screen buffer
+    terminal.setting(ANSI_CLEAR_SCROLLBACK);   // Clear scrollback buffer
+    terminal.setting(ANSI_RESET_SCROLL_REGION);       // Disable scrolling for entire screen
 }
 
 #endif // TERMINAL_H
